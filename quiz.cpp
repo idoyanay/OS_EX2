@@ -1,64 +1,53 @@
-#include <iostream>
-#include <unistd.h>
 #include <thread>
 #include <mutex>
-
-#define N 20
-
-
-#include <atomic>
 #include <condition_variable>
-
+#include <iostream>
+#include <unistd.h>
 
 class pair_lock
 {
-    std::mutex mtx;
-    std::condition_variable cv_enter;
-    std::condition_variable cv_exit;
-    int waiting;       // Number of threads waiting to enter
-    int inside;        // Number of threads currently inside
-    int releasing;     // Number of threads trying to release
-
 public:
     pair_lock(void);
     void lock(void);
     void release(void);
 
 private:
-    // nothing private extra
+    std::mutex mtx;
+    std::condition_variable cv;
+    int waiting;        // How many threads are waiting to form a pair
+    int inside;         // How many threads are currently inside critical section
+    int release_count;  // How many threads already called release
 };
 
 pair_lock::pair_lock(void)
 {
     waiting = 0;
     inside = 0;
-    releasing = 0;
+    release_count = 0;
 }
 
 void pair_lock::lock(void)
 {
     std::unique_lock<std::mutex> lock(mtx);
 
-    // If already two inside, wait for them to finish first
-    while (inside == 2)
+    while (inside == 2) // If already two inside, wait for them to finish
     {
-        cv_exit.wait(lock);
+        cv.wait(lock);
     }
 
     waiting++;
 
     if (waiting < 2)
     {
-        // First thread: wait for second thread
-        cv_enter.wait(lock, [this]() { return waiting == 2; });
+        // First thread: wait for partner
+        cv.wait(lock, [this]() { return waiting == 2; });
     }
     else
     {
-        // Second thread arrived: notify first thread
-        cv_enter.notify_one();
+        // Second thread: notify the first
+        cv.notify_one();
     }
 
-    // Now both are ready to enter
     inside++;
 }
 
@@ -66,29 +55,32 @@ void pair_lock::release(void)
 {
     std::unique_lock<std::mutex> lock(mtx);
 
-    releasing++;
+    release_count++;
 
-    if (releasing < 2)
+    if (release_count < 2)
     {
-        // First thread to release: wait for partner
-        cv_exit.wait(lock, [this]() { return releasing == 2; });
+        // First thread to call release waits for the partner
+        cv.wait(lock, [this]() { return release_count == 2; });
     }
     else
     {
-        // Second thread to release: notify the first
-        cv_exit.notify_one();
+        // Second thread: notify the first thread waiting in release
+        cv.notify_one();
     }
 
-    // After both released, reset for next pair
+    // After both have released, reset for next pair
     inside = 0;
     waiting = 0;
-    releasing = 0;
+    release_count = 0;
 
-    // Wake up any threads waiting for the next pair
-    cv_exit.notify_all();
+    // Wake up threads waiting to lock
+    cv.notify_all();
 }
 
 
+
+
+#define N 20
 
 void thread_func(pair_lock &pl, std::mutex &mtx, int &inside, int tid)
 {
