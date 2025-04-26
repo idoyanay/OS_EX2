@@ -14,7 +14,6 @@ typedef void (*thread_entry_point)(void);
 
 /* External interface */
 
-
 /**
  * @brief initializes the thread library.
  *
