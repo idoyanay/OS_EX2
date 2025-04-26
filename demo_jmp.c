@@ -101,7 +101,7 @@ void thread0(void)
             yield();
         }
         usleep(SECOND);
-        
+
     }
 }
 
@@ -146,7 +146,5 @@ void setup(void)
 
 int main(void)
 {
-    setup();
-    jump_to_thread(0);
     return 0;
 }
