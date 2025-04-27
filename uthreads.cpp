@@ -1,6 +1,12 @@
 /**
  * Implementation of the uthreads library.
  * Authors: Ido Yanay, Omri Baum.
+ * 
+ * Notes (for implementation ): 
+ * 1. need to check if realy need blocking itimer signals when runnign librarys fucntions.
+ * 2. check the sigsetjmp in the init function.
+ * 
+ * TODO -- delte the notes
  */
 
 #include "uthreads.h"
@@ -272,6 +278,8 @@ int uthread_terminate(int tid){
      * Function flow: check if tid==0 for terminating the whole program. checking if tid is the tid of the running thread (requare more updates).
      *                trying to delte the thread fits to the tid from the lists of theads. if not succseeded, means that the tid is not valid.
      */
+
+    block_timer_signal();
     if(tid == 0){
         terminate_program();
     }
@@ -290,6 +298,7 @@ int uthread_terminate(int tid){
             return -1;
         }
     }
+    unblock_timer_signal();
     return 0;
 }
 
