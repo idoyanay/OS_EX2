@@ -1,4 +1,4 @@
-/*
+--/*
  * SIGINT signal handler demo program.
  * Hebrew University OS course.
  * Author: OS, os@cs.huji.ac.il
