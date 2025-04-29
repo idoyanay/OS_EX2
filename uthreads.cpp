@@ -111,7 +111,7 @@ address_t translate_address(address_t addr)
     return ret;
 }
 
-void setup_thread(char *stack, thread_entry_point entry_point, sigjmp_buf env)
+void setup_thread(char* stack, thread_entry_point entry_point, sigjmp_buf& env)
 {
     /**
      * setup thread like in the example
