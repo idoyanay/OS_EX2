@@ -302,4 +302,84 @@ int uthread_terminate(int tid){
     return 0;
 }
 
- 
+
+/**
+ * @brief Blocks the thread with ID tid. The thread may be resumed later using uthread_resume.
+ *
+ * If no thread with ID tid exists it is considered as an error. In addition, it is an error to try blocking the
+ * main thread (tid == 0). If a thread blocks itself, a scheduling decision should be made. Blocking a thread in
+ * BLOCKED state has no effect and is not considered an error.
+ *
+ * @return On success, return 0. On failure, return -1.
+*/
+int uthread_block(int tid){
+    return 1;
+}
+
+
+/**
+ * @brief Resumes a blocked thread with ID tid and moves it to the READY state.
+ *
+ * Resuming a thread in a RUNNING or READY state has no effect and is not considered as an error. If no thread with
+ * ID tid exists it is considered an error.
+ *
+ * @return On success, return 0. On failure, return -1.
+*/
+int uthread_resume(int tid){
+    return 1;
+}
+
+
+/**
+ * @brief Blocks the RUNNING thread for num_quantums quantums.
+ *
+ * Immediately after the RUNNING thread transitions to the BLOCKED state a scheduling decision should be made.
+ * After the sleeping time is over, the thread should go back to the end of the READY queue.
+ * If the thread which was just RUNNING should also be added to the READY queue, or if multiple threads wake up 
+ * at the same time, the order in which they're added to the end of the READY queue doesn't matter.
+ * The number of quantums refers to the number of times a new quantum starts, regardless of the reason. Specifically,
+ * the quantum of the thread which has made the call to uthread_sleep isn’t counted.
+ * It is considered an error if the main thread (tid == 0) calls this function.
+ *
+ * @return On success, return 0. On failure, return -1.
+*/
+int uthread_sleep(int num_quantums){
+    return 1;
+}
+
+
+/**
+ * @brief Returns the thread ID of the calling thread.
+ *
+ * @return The ID of the calling thread.
+*/
+int uthread_get_tid(){
+    return 1;
+}
+
+
+/**
+ * @brief Returns the total number of quantums since the library was initialized, including the current quantum.
+ *
+ * Right after the call to uthread_init, the value should be 1.
+ * Each time a new quantum starts, regardless of the reason, this number should be increased by 1.
+ *
+ * @return The total number of quantums.
+*/
+int uthread_get_total_quantums(){
+    return 1;
+}
+
+
+/**
+ * @brief Returns the number of quantums the thread with ID tid was in RUNNING state.
+ *
+ * On the first time a thread runs, the function should return 1. Every additional quantum that the thread starts should
+ * increase this value by 1 (so if the thread with ID tid is in RUNNING state when this function is called, include
+ * also the current quantum). If no thread with ID tid exists it is considered an error.
+ *
+ * @return On success, return the number of quantums of the thread with ID tid. On failure, return -1.
+*/
+int uthread_get_quantums(int tid){
+    return 1;
+}
