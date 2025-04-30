@@ -78,6 +78,7 @@ void end_of_quantum(int sig)
      * after that, config the itimer for running again for the next thread.
      * at the end, jumping to the new thread - if we changed (meaning there was more then 1 ready thread)
      */
+    std::cout<<"detected itimer signal"<<std::endl;
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
@@ -85,7 +86,6 @@ void end_of_quantum(int sig)
         unblocked_threads.front()->state = ThreadState::RUNNING; // updating the runnign thread
         
     }
-
     timer.it_value.tv_sec = 0;
     timer.it_value.tv_usec = quantum_per_thread;
     if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){ // check if restarting the timer had faild
@@ -204,6 +204,16 @@ int uthread_spawn(thread_entry_point entry_point){
      */
     block_timer_signal();
 
+    
+    
+    // ------- debug ----------//
+    struct itimerval current;
+    if (getitimer(ITIMER_VIRTUAL, &current) == -1) {
+        perror("getitimer failed");
+        return -1;
+    }
+    std::cout << "current usec remain in itimer: "<<current.it_value.tv_usec<<std::endl;
+    
     int num_threads = unblocked_threads.size() + blocked_threads.size();
     if(num_threads >= MAX_THREAD_NUM) { // check if the number of threads is already at the maximum 
         print_error("uthread_spawn: reached maximum number of threads", PrintType::THREAD_LIB_ERR);
@@ -252,8 +262,8 @@ std::list<Thread*>::iterator find_thread_in_list(std::list<Thread*>& lst, int wa
      * find thread based on tid. on success, return the iterator that points to the thread. on fail return lst.end().
      */
     for (auto it = lst.begin(); it != lst.end(); ++it) {
-        if ((*it)->tid == wanted_tid) {
-            return it;  // found
+	if ((*it)->tid == wanted_tid) {
+             return it;  // found
         }
     }
     return lst.end();  // not found
@@ -263,9 +273,9 @@ int delete_from_list(std::list<Thread*>& lst, int tid){
     /**
      * delete the wanted thread based on the tid, from the lst. return 0 if succseeded (the thread in the lst) and -1 on fail.
      */
-    auto thread_itr = find_thread_in_list(unblocked_threads, tid);
+    auto thread_itr = find_thread_in_list(lst, tid);
     if(thread_itr != lst.end()){
-        unused_tid.insert((*thread_itr)->tid); // adding the tid of the terminated thread to the unused.
+	unused_tid.insert((*thread_itr)->tid); // adding the tid of the terminated thread to the unused.
         delete *thread_itr; //delete content and resources
         lst.erase(thread_itr);
         return 0;
@@ -278,6 +288,7 @@ int uthread_terminate(int tid){
      * Function flow: check if tid==0 for terminating the whole program. checking if tid is the tid of the running thread (requare more updates).
      *                trying to delte the thread fits to the tid from the lists of theads. if not succseeded, means that the tid is not valid.
      */
+
 
     block_timer_signal();
     if(tid == 0){
@@ -292,10 +303,11 @@ int uthread_terminate(int tid){
         siglongjmp(unblocked_threads.front()->env, 1); // the function not return, moving to the next thread.
         
     }
+
     if(delete_from_list(unblocked_threads, tid) != 0){
-        if(delete_from_list(blocked_threads, tid) != 0){ // meaning that the tid is not the running one, and not in any list
-            print_error("uthread_terminate: tid is not in use", PrintType::THREAD_LIB_ERR);
-            return -1;
+	if(delete_from_list(blocked_threads, tid) != 0){ // meaning that the tid is not the running one, and not in any list
+	    print_error("uthread_terminate: tid is not in use", PrintType::THREAD_LIB_ERR);
+	    return -1;
         }
     }
     unblock_timer_signal();

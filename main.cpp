@@ -1,34 +1,66 @@
 #include "uthreads.h"
 #include <iostream>
+#include <unistd.h>  // for sleep (optional)
 
 void thread_func1() {
-    std::cout << "Thread 1 is running!" << std::endl;
-    uthread_terminate(1); // Thread 1 terminates itself
+    std::cout << "[T1] Thread 1 is running.\n";
+    std::cout << "[T1] Terminating itself...\n";
+    uthread_terminate(1);  // self-terminate
+    std::cout << "[T1] Should never reach here!\n";
 }
 
 void thread_func2() {
-    std::cout << "Thread 2 is running!" << std::endl;
-    uthread_terminate(2); // Thread 2 terminates itself
+    std::cout << "[T2] Thread 2 is running.\n";
+    for (int i = 0; i < 2; ++i) {
+        std::cout << "[T2] Loop " << i << "\n";
+    }
+    std::cout << "[T2] Done. Yielding back.\n";
+    // Just return — will be terminated by main
 }
 
 int main() {
-    if (uthread_init(1000000) == -1) { // 1 second quantum
-        std::cerr << "uthread_init failed." << std::endl;
+    std::cout << "[MAIN] Initializing uthreads...\n";
+    if (uthread_init(100000) == -1) {
+        std::cerr << "[MAIN] uthread_init failed.\n";
         return 1;
     }
 
+    std::cout << "[MAIN] Spawning thread 1...\n";
     int tid1 = uthread_spawn(thread_func1);
     if (tid1 == -1) {
-        std::cerr << "uthread_spawn for thread 1 failed." << std::endl;
-        return 1;
+        std::cerr << "[MAIN] Failed to spawn thread 1\n";
     }
 
+    usleep(2000000);
+    std::cout << "[MAIN] Spawning thread 2...\n";
     int tid2 = uthread_spawn(thread_func2);
     if (tid2 == -1) {
-        std::cerr << "uthread_spawn for thread 2 failed." << std::endl;
-        return 1;
+        std::cerr << "[MAIN] Failed to spawn thread 2\n";
     }
 
-    // Main thread is just waiting while threads 1 and 2 terminate themselves
-    while (true) {} // Infinite loop to keep main alive
+    usleep(2000000);
+    // Try to terminate an invalid TID
+    std::cout << "[MAIN] Trying to terminate non-existent TID 999...\n";
+    int err = uthread_terminate(999);
+    if (err == -1) {
+        std::cout << "[MAIN] Correctly failed to terminate invalid TID.\n";
+    } else {
+        std::cerr << "[MAIN] ERROR: invalid TID termination should fail.\n";
+    }
+
+    // Give some time for thread 1 to self-terminate
+    usleep(5000000); // sleep 5s
+
+    std::cout << "[MAIN] Terminating thread 2 (TID=" << tid2 << ")...\n";
+    if (uthread_terminate(tid2) == 0) {
+        std::cout << "[MAIN] Successfully terminated thread 2.\n";
+    } else {
+        std::cerr << "[MAIN] Failed to terminate thread 2.\n";
+    }
+
+    std::cout << "[MAIN] All tests done. Main thread exiting...\n";
+    uthread_terminate(0);  // This will call exit(0), so nothing after it runs
+
+    return 0;
 }
+
