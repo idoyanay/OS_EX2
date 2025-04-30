@@ -214,7 +214,6 @@ int uthread_spawn(thread_entry_point entry_point){
         perror("getitimer failed");
         return -1;
     }
-    std::cout << "current usec remain in itimer: "<<current.it_value.tv_usec<<std::endl;
     
     int num_threads = unblocked_threads.size() + blocked_threads.size();
     if(num_threads >= MAX_THREAD_NUM) { // check if the number of threads is already at the maximum 
