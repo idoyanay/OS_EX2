@@ -194,18 +194,6 @@ int uthread_init(int quantum_usecs)
         if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){
             print_error("uthread_init: setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
         }
-    
-        volatile int dummy = 0;
-        for (int i = 0; i < 10000000; ++i) {
-            dummy += i;
-        }
-        struct itimerval current;
-        if (getitimer(ITIMER_VIRTUAL, &current) == -1) {
-            perror("getitimer failed");
-            return -1;
-        }
-        std::cout << "init thread --- current usec remain in itimer: "<<current.it_value.tv_usec<<std::endl;
-        
     }
     return 0;
 

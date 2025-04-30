@@ -18,6 +18,12 @@ void thread_func2() {
     // Just return — will be terminated by main
 }
 
+void nop_delay(int value) {
+    volatile int dummy = 0;
+    for(int i = 0; i < value; ++i) {
+        dummy += 1;
+    }
+}
 int main() {
     std::cout << "[MAIN] Initializing uthreads...\n";
     if (uthread_init(100000) == -1) {
@@ -31,14 +37,15 @@ int main() {
         std::cerr << "[MAIN] Failed to spawn thread 1\n";
     }
 
-    usleep(2000000);
+    nop_delay(10000000);  // Simulate some work in main thread
+
     std::cout << "[MAIN] Spawning thread 2...\n";
     int tid2 = uthread_spawn(thread_func2);
     if (tid2 == -1) {
         std::cerr << "[MAIN] Failed to spawn thread 2\n";
     }
 
-    usleep(2000000);
+    nop_delay(10000000);  // Simulate some work in main thread
     // Try to terminate an invalid TID
     std::cout << "[MAIN] Trying to terminate non-existent TID 999...\n";
     int err = uthread_terminate(999);
@@ -49,7 +56,7 @@ int main() {
     }
 
     // Give some time for thread 1 to self-terminate
-    usleep(5000000); // sleep 5s
+    nop_delay(10000000);  // Simulate some work in main thread
 
     std::cout << "[MAIN] Terminating thread 2 (TID=" << tid2 << ")...\n";
     if (uthread_terminate(tid2) == 0) {
