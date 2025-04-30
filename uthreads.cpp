@@ -165,7 +165,6 @@ int uthread_init(int quantum_usecs)
     /**
      * Function flow: checking input, init sigset and quantum-global, create main thread, updaiting sig-hangler, updaiting itimer.
      */
-    block_timer_signal();
     if (quantum_usecs <= 0) { 
         print_error("uthread_init: quantum_usecs must be positive", PrintType::THREAD_LIB_ERR);
         return -1;
@@ -195,8 +194,15 @@ int uthread_init(int quantum_usecs)
         if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){
             print_error("uthread_init: setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
         }
-        unblock_timer_signal();
-        return 0;
+    
+        usleep(quantum_per_thread / 2); // give the thread some time to run before the first quantum ends
+        struct itimerval current;
+        if (getitimer(ITIMER_VIRTUAL, &current) == -1) {
+            perror("getitimer failed");
+            return -1;
+        }
+        std::cout << "init thread --- current usec remain in itimer: "<<current.it_value.tv_usec<<std::endl;
+        
     }
     return 0;
 
