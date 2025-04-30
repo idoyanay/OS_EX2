@@ -69,6 +69,13 @@ void print_error(const std::string& msg, PrintType type) {
 
 
 
+ void print_unblocked_tids() {
+    std::cout << "[DEBUG] Unblocked thread TIDs: ";
+    for (Thread* t : unblocked_threads) {
+        std::cout << t->tid << " ";
+    }
+    std::cout << std::endl;
+}
 
 void end_of_quantum(int sig)
 {
@@ -79,6 +86,7 @@ void end_of_quantum(int sig)
      * at the end, jumping to the new thread - if we changed (meaning there was more then 1 ready thread)
      */
     std::cout<<"detected itimer signal of thread "<<unblocked_threads.front()->tid<<std::endl;
+    print_unblocked_tids();
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
