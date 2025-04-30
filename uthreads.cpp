@@ -78,7 +78,7 @@ void end_of_quantum(int sig)
      * after that, config the itimer for running again for the next thread.
      * at the end, jumping to the new thread - if we changed (meaning there was more then 1 ready thread)
      */
-    std::cout<<"detected itimer signal"<<std::endl;
+    std::cout<<"detected itimer signal of thread "<<unblocked_threads.front()->tid<<std::endl;
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
