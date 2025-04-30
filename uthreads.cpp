@@ -165,6 +165,7 @@ int uthread_init(int quantum_usecs)
     /**
      * Function flow: checking input, init sigset and quantum-global, create main thread, updaiting sig-hangler, updaiting itimer.
      */
+    block_timer_signal();
     if (quantum_usecs <= 0) { 
         print_error("uthread_init: quantum_usecs must be positive", PrintType::THREAD_LIB_ERR);
         return -1;
@@ -173,28 +174,32 @@ int uthread_init(int quantum_usecs)
     init_itimer_sigset(); // init the sigset for later blocking and unblocking the itimer-signal
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, ThreadState::RUNNING, {}, 0, {}}); // initializing main thread
-    sigsetjmp(unblocked_threads.front()->env, 1); // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
+    if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
-    // create and update the sig-handler
-    struct sigaction sa = {0};
-    sa.sa_handler = &end_of_quantum;
-    if (sigaction(SIGVTALRM, &sa, NULL) < 0)
-    {
-        print_error("uthread_init: sigaction failed", PrintType::SYSTEM_ERR); // TODO: make sure this is the type of error
-    }
+        // create and update the sig-handler
+        struct sigaction sa = {0};
+        sa.sa_handler = &end_of_quantum;
+        if (sigaction(SIGVTALRM, &sa, NULL) < 0)
+        {
+            print_error("uthread_init: sigaction failed", PrintType::SYSTEM_ERR); // TODO: make sure this is the type of error
+        }
 
 
-    // -- the timer will not reset after the first call when initializing the it_interval like this. 
-    // only the main thread needs to do this.
-    timer.it_interval.tv_sec = 0;
-    timer.it_interval.tv_usec = 0;
-    //--
-    timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = quantum_per_thread;
-    if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){
-        print_error("uthread_init: setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
+        // -- the timer will not reset after the first call when initializing the it_interval like this. 
+        // only the main thread needs to do this.
+        timer.it_interval.tv_sec = 0;
+        timer.it_interval.tv_usec = 0;
+        //--
+        timer.it_value.tv_sec = 0;
+        timer.it_value.tv_usec = quantum_per_thread;
+        if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){
+            print_error("uthread_init: setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
+        }
+        unblock_timer_signal();
+        return 0;
     }
     return 0;
+
  }
 
 
