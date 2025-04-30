@@ -196,7 +196,7 @@ int uthread_init(int quantum_usecs)
         }
     
         volatile int dummy = 0;
-        for (int i = 0; i < quantum_per_thread/2; ++i) {
+        for (int i = 0; i < 10000000; ++i) {
             dummy += i;
         }
         struct itimerval current;
