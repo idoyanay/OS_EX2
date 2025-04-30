@@ -195,7 +195,10 @@ int uthread_init(int quantum_usecs)
             print_error("uthread_init: setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
         }
     
-        usleep(quantum_per_thread / 2); // give the thread some time to run before the first quantum ends
+        volatile int dummy = 0;
+        for (int i = 0; i < quantum_per_thread/2; ++i) {
+            dummy += i;
+        }
         struct itimerval current;
         if (getitimer(ITIMER_VIRTUAL, &current) == -1) {
             perror("getitimer failed");
