@@ -7,6 +7,7 @@ void thread_func1() {
     std::cout << "[T1] Terminating itself...\n";
     uthread_terminate(1);  // self-terminate
     std::cout << "[T1] Should never reach here!\n";
+    while(true);
 }
 
 void thread_func2() {
@@ -15,6 +16,7 @@ void thread_func2() {
         std::cout << "[T2] Loop " << i << "\n";
     }
     std::cout << "[T2] Done. Yielding back.\n";
+    while(true);
     // Just return — will be terminated by main
 }
 
