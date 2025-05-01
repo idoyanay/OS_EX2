@@ -204,15 +204,6 @@ int uthread_spawn(thread_entry_point entry_point){
      * Function flow: block itimer-signal, checking MAX_THREADS and input, updaiting new tid, create and update the new thread, unblock itimer-signal
      */
     block_timer_signal();
-
-    
-    
-    // ------- debug ----------//
-    struct itimerval current;
-    if (getitimer(ITIMER_VIRTUAL, &current) == -1) {
-        perror("getitimer failed");
-        return -1;
-    }
     
     int num_threads = unblocked_threads.size() + blocked_threads.size();
     if(num_threads >= MAX_THREAD_NUM) { // check if the number of threads is already at the maximum 
