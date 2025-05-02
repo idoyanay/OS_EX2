@@ -456,7 +456,7 @@ int uthread_init(int quantum_usecs)
       || unused_tid.find(tid) != unused_tid.end() ;
      int ret_val;
      if(unvalid_tid){
-         print_error("uthread_get_quantums: unvalid tid " + tid, PrintType::THREAD_LIB_ERR);
+         print_error("uthread_get_quantums: unvalid tid " + std::to_string(tid), PrintType::THREAD_LIB_ERR);
          ret_val = -1;
      }
      
