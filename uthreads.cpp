@@ -342,6 +342,7 @@ int uthread_init(int quantum_usecs)
  int uthread_block(int tid){
      block_timer_signal();
      
+     std::cout << "uthread_block: tid = " << tid << std::endl; // TODO - remove this line
      int succses = 0;
  
      bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
@@ -353,6 +354,7 @@ int uthread_init(int quantum_usecs)
      
  
      else if(unblocked_threads.front()->tid == tid){
+         std::cout << "uthread_block: tid = " << tid << " is the running thread" << std::endl; // TODO - remove this line
          Thread* thread_ptr = unblocked_threads.front();         
          thread_ptr->state = ThreadState::BLOCKED; 
          blocked_threads.push_back(thread_ptr);
@@ -361,6 +363,7 @@ int uthread_init(int quantum_usecs)
          if(sigsetjmp(thread_ptr->env, 1) == 0){
              pre_junmping();
              unblock_timer_signal(); // TODO - check if when we unblock -unblocked signals its OK
+             std::cout<< "jumping to next thread" << std::endl; // TODO - remove this line
              siglongjmp(unblocked_threads.front()->env, 1);
          }
      }

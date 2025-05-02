@@ -41,7 +41,7 @@ void thread_func_C() {
 
 int main() {
     std::cout << "[MAIN] Initializing uthreads...\n";
-    if (uthread_init(100000) == -1) {
+    if (uthread_init(100) == -1) {
         std::cerr << "[MAIN] uthread_init failed.\n";
         return 1;
     }
