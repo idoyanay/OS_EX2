@@ -454,19 +454,22 @@ int uthread_init(int quantum_usecs)
     block_timer_signal();
      bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
       || unused_tid.find(tid) != unused_tid.end() ;
+     int ret_val;
      if(unvalid_tid){
          print_error("uthread_get_quantums: unvalid tid", PrintType::THREAD_LIB_ERR);
-         return -1;
+         ret_val = -1;
      }
      
      auto unblocked_itr = find_thread_in_list(unblocked_threads, tid);
      if(unblocked_itr != unblocked_threads.end()){
-         return (*unblocked_itr) -> quantom_count;
+         ret_val = (*unblocked_itr) -> quantom_count;
      }
      else{
          auto blocked_itr = find_thread_in_list(blocked_threads, tid);
-         return (*blocked_itr) -> quantom_count;
+         ret_val = (*blocked_itr) -> quantom_count;
      }
      unblock_timer_signal();
+     return ret_val;
+     
  }
  
