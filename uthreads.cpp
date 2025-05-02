@@ -178,7 +178,13 @@ void end_of_quantum(int sig){
     //wakeup any sleeping thread
     
     std::cout<<"end_of_quantom of thread "<<unblocked_threads.front()->tid << std::endl;
+    // print all ready blocks:
+    std::cout<<"------------"<<std::endl;
+    for (Thread *thread : unblocked_threads){
 
+        std::cout<<"ready thread: "<<thread->tid << std::endl;
+    }
+    std::cout<<"------------"<<std::endl;
     Thread *prev_run = unblocked_threads.front();
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
