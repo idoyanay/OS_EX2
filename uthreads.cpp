@@ -189,6 +189,7 @@ void end_of_quantum(int sig){
     if (sigsetjmp(prev_run->env, 1) == 0){
         pre_junmping();
         std::cout<<"jumping to "<<unblocked_threads.front()->tid << std::endl;
+        std::cout<<""<<std::endl;
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
     }
 }
