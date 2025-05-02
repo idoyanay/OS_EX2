@@ -59,8 +59,8 @@ int main(void)
 				std::cout << "m" << tid << " Quanta:" <<  i << std::endl;
 				if (i == 3)
 				{
-					std::cout << "m spawns f at (1) " << uthread_spawn(f) << std::endl;
-					std::cout << "m spawns g at (2) " << uthread_spawn(g) << std::endl;
+					// std::cout << "m spawns f at (1) " << uthread_spawn(f) << std::endl;
+					// std::cout << "m spawns g at (2) " << uthread_spawn(g) << std::endl;
 				}
 				if (i == 10)
 				{
