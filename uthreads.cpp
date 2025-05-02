@@ -173,7 +173,7 @@ void pre_junmping(){
 
 void end_of_quantum(int sig){
     // increase global variable as another thread about to run
-    std::cout<<"detected end of quantom for thread "<< unblocked_threads.front()->tid << std::endl;
+    // std::cout<<"detected end of quantom for thread "<< unblocked_threads.front()->tid << std::endl;
 
     //wakeup any sleeping thread
     
@@ -188,11 +188,11 @@ void end_of_quantum(int sig){
     
     if (sigsetjmp(prev_run->env, 1) == 0){
         pre_junmping();
-        std::cout<<"jumping to "<<unblocked_threads.front()->tid << std::endl;
+        // std::cout<<"jumping to "<<unblocked_threads.front()->tid << std::endl;
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
         return;
     }
-    std::cout<<"return to thread "<<unblocked_threads.front()->tid << std::endl;
+    // std::cout<<"return to thread "<<unblocked_threads.front()->tid << std::endl;
     return;
 
 }
@@ -232,7 +232,7 @@ int uthread_init(int quantum_usecs)
       * Function flow: block itimer-signal, checking MAX_THREADS and input, updaiting new tid, create and update the new thread, unblock itimer-signal
       */
      block_timer_signal();
-     std::cout<< "enter uthread_spawn" <<std::endl;
+    //  std::cout<< "enter uthread_spawn" <<std::endl;
  
      int num_threads = unblocked_threads.size() + blocked_threads.size();
      if(num_threads >= MAX_THREAD_NUM) { // check if the number of threads is already at the maximum 
@@ -310,7 +310,7 @@ int uthread_init(int quantum_usecs)
       */
  
      block_timer_signal();
-     std::cout<<"uthread_terminate("<<tid<<")"<<std::endl;
+    //  std::cout<<"uthread_terminate("<<tid<<")"<<std::endl;
      if(tid == 0){
          terminate_program();
      }
@@ -349,12 +349,12 @@ int uthread_init(int quantum_usecs)
  */
  int uthread_block(int tid){
      block_timer_signal();
-     std::cout<<"uthread_block("<<tid<<")"<<std::endl;
+    //  std::cout<<"uthread_block("<<tid<<")"<<std::endl;
      
      // print all ready threads:
-     for(auto thread : unblocked_threads){
-        std::cout<<"uthread_block: unblocked_threads tid = "<<thread->tid<<std::endl;
-     }
+    //  for(auto thread : unblocked_threads){
+        // std::cout<<"uthread_block: unblocked_threads tid = "<<thread->tid<<std::endl;
+    //  }
      int succses = 0;
  
      bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
@@ -366,7 +366,7 @@ int uthread_init(int quantum_usecs)
      
  
      else if(unblocked_threads.front()->tid == tid){
-         std::cout << "uthread_block: tid = " << tid << " is the running thread" << std::endl; // TODO - remove this line
+        //  std::cout << "uthread_block: tid = " << tid << " is the running thread" << std::endl; // TODO - remove this line
          Thread* thread_ptr = unblocked_threads.front();         
          thread_ptr->state = ThreadState::BLOCKED; 
          blocked_threads.push_back(thread_ptr);
@@ -375,7 +375,7 @@ int uthread_init(int quantum_usecs)
          if(sigsetjmp(thread_ptr->env, 1) == 0){
              pre_junmping();
              unblock_timer_signal(); // TODO - check if when we unblock -unblocked signals its OK
-             std::cout<< "jumping to next thread" << std::endl; // TODO - remove this line
+            //  std::cout<< "jumping to next thread" << std::endl; // TODO - remove this line
              siglongjmp(unblocked_threads.front()->env, 1);
          }
      }
