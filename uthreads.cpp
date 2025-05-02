@@ -173,7 +173,7 @@ void pre_junmping(){
 
 void end_of_quantum(int sig){
     // increase global variable as another thread about to run
-    std::cout<<"detected end of quantom for thread "<< unblocked_threads.front() << std::endl;
+    std::cout<<"detected end of quantom for thread "<< unblocked_threads.front()->tid << std::endl;
 
     //wakeup any sleeping thread
     
