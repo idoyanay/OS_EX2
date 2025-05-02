@@ -56,12 +56,7 @@
   // ------------------------------------------------------------------------- //
   
  
- void pre_junmping(){
-     total_quantums++;
-     unblocked_threads.front()->quantom_count++;
-     wakeup_sleeping_threads();
-     start_timer();
- }
+ 
  
  void print_error(const std::string& msg, PrintType type) {
      /**
@@ -187,6 +182,13 @@
          print_error("sigprocmask unblock failed", PrintType::SYSTEM_ERR);
      }
  }
+
+void pre_junmping(){
+    total_quantums++;
+    unblocked_threads.front()->quantom_count++;
+    wakeup_sleeping_threads();
+    start_timer();
+}
  
  int uthread_init(int quantum_usecs) 
  {
