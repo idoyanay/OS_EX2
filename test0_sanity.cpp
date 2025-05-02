@@ -10,10 +10,10 @@ void f (void)
 	{
 		if(i == uthread_get_quantums(tid))
 		{
-			std::cout << "[f] f" << tid << " Quanta:" <<  i << std::endl;
+			std::cout << "f" << tid << " Quanta:" <<  i << std::endl;
 			if (i == 5)
 			{
-				std::cout << "[f] f END" << std::endl;
+				std::cout << "f END" << std::endl;
 				uthread_terminate(tid);
 			}
 			i++;
@@ -30,10 +30,10 @@ void g (void)
 	{
 		if(i == uthread_get_quantums(tid))
 		{
-			std::cout << "[g] g" << tid << " Quanta:" <<  i << std::endl;
+			std::cout << "g" << tid << " Quanta:" <<  i << std::endl;
 			if (i == 5)
 			{
-				std::cout << "[g] g END" << std::endl;
+				std::cout << "g END" << std::endl;
 				uthread_terminate(tid);
 			}
 			i++;
@@ -50,21 +50,21 @@ int main(void)
 		uthread_init(1000);
 		int tid = uthread_get_tid();
 		int i = 1;
-		std::cout << "[MAIN] Thread:m Number:(0) " << tid << std::endl;
-		std::cout << "[MAIN] Init Quantum num is: " << uthread_get_total_quantums() << std::endl;
+		std::cout << "Thread:m Number:(0) " << tid << std::endl;
+		std::cout << "Init Quantum num is: " << uthread_get_total_quantums() << std::endl;
 		while(1)
 		{
 			if(i == uthread_get_quantums(tid))
 			{
-				std::cout << "[MAIN] m" << tid << " Quanta:" <<  i << std::endl;
+				std::cout << "m" << tid << " Quanta:" <<  i << std::endl;
 				if (i == 3)
 				{
-					std::cout << "[MAIN] m spawns f at (1) " << uthread_spawn(f) << std::endl;
-					std::cout << "[MAIN] m spawns g at (2) " << uthread_spawn(g) << std::endl;
+					std::cout << "m spawns f at (1) " << uthread_spawn(f) << std::endl;
+					std::cout << "m spawns g at (2) " << uthread_spawn(g) << std::endl;
 				}
 				if (i == 10)
 				{
-					std::cout << "[MAIN] Total Quantums: " << uthread_get_total_quantums() << std::endl;
+					std::cout << "Total Quantums: " << uthread_get_total_quantums() << std::endl;
 					uthread_terminate(tid);
 				}
 				i++;

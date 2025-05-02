@@ -177,6 +177,7 @@ void end_of_quantum(int sig){
 
     //wakeup any sleeping thread
     
+    std::cout<<"end_of_quantom of thread "<<unblocked_threads.front()->tid << std::endl;
 
     Thread *prev_run = unblocked_threads.front();
     if (unblocked_threads.size() > 1){ // if there is another ready thread
@@ -192,6 +193,8 @@ void end_of_quantum(int sig){
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
     }
 }
+
+
 int uthread_init(int quantum_usecs) 
  {
      /**
