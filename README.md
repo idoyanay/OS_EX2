@@ -10,39 +10,38 @@ ANSWERS:
 ----- Part 1 -----
 
 Q1 - a:
-sigsetjmp(sugjmp_buf env, int savesigs) - save the stack context and the CPU current state in the variable env.
-if savesigs == 1 the currentky masked signals are saved as well.
-siglongjmp(sugjmp_buf env, int val) - jumps to the CPU state and stack context kept in env. if any masked signals were saved,
-it will restore it as well. ???the return value is defined by the user???
+sigsetjmp(sigjmp_buf env, int savesigs) – Saves the stack context and the CPU's current state in the variable env.
+If savesigs == 1, the currently masked signals are saved as well.
+siglongjmp(sigjmp_buf env, int val) – Jumps to the CPU state and stack context stored in env.
+If any masked signals were saved, they will be restored as well.
+sigsetjmp returns 0 when saving the context, and returns the value passed to siglongjmp when control returns to that point via siglongjmp.
 
 Q1 - b: 
-sigsetjmp will save the makes signals if indicated to do so. and siglongjmp will restore it.
-we conclude that masked signals can be restores and saved by those 2 functions. 
+sigsetjmp will save the masked signals if instructed to do so, and siglongjmp will restore them.
+We conclude that masked signals can be restored and saved using these two functions.
 
 Q2: 
-the general use we chose - simple text editor or notes editor.
-user-level threads are a reasonable choice for your example because "jumping' bewtween notes will consider as user level threads transitions
-and they require less then kernel level threads. for every note or file we will create a user level thread. moreover, all user level threads share the same memory space so data can be shared between notes faster than kernel level threads.
+The general use case we chose is a simple text editor or note editor.
+User-level threads are a reasonable choice for this example because "jumping" between notes can be considered as user-level thread transitions,
+which require less overhead than kernel-level threads. For every note or file, we create a user-level thread.
+Moreover, all user-level threads share the same memory space, so data can be shared between notes faster than with kernel-level threads.
 
 Q3: 
 advantages:      
-         1. security - if one thread has been attacked, other threads will not be affected by the attack.
-            each process has its own memory space so the attacker exposed to the specific space he attacked. 
-         2. stability - if one process is unresponsive or it has crashed the other processes will not be affected.
-         3. resources management- memory leaks are prevented widely. if one process leaks it stays restricted to the specific process.
-            furthurmore, closing a tab will invoke the OS to reclaims immediately the memory allocated for the tab.   
+         1. security - If one thread is attacked, other threads will not be affected.
+         Each process has its own memory space, so the attacker is limited to the specific space that was compromised.
+         2. stability - If one process becomes unresponsive or crashes, other processes are  not affected.
+         3. resources management- Memory leaks are largely contained. If one process leaks memory, the impact is restricted to that process.
+         Furthermore, closing a tab triggers the OS to immediately reclaim the memory allocated to that tab.  
                      
 disadvantages:   
-         1. resources use - each process gets its own memory space. and shared data may be stored multiple times
-         2. overhead time - multiple processes increases the resources consumption and CPU process time. 
-         3. if theres not enough free memory to create another process, opening a new tab will raise an error. 
+         1. resources use - Each process has its own memory space, and shared data may be duplicated.
+         2. overhead time - Multiple processes increase resource consumption and CPU processing time.
+         3. Limited memory – If there is not enough free memory to create another process, opening a new tab will raise an error.
 
-Q4: 
-thats the text printed in the shell by the command kill pid:
-
- ~~~~~~~enter here the text from kill pid ~~~~~~~~~~~`
- 
- The process begins when the user types kill pid and presses the Enter key.
+Q4:
+We ran the required commands and obtained the relevant output. Now we will explain what happened.
+The process begins when the user types kill pid and presses the Enter key.
 Each keypress generates a hardware interrupt, which is handled by the keyboard hardware and the operating system.
 The OS receives the typed characters and passes them to the shell, which collects them into a string representing a command.
 Once Enter is pressed, the shell parses the command (kill pid) and recognizes it as a request to send a signal to a specific process.
@@ -51,5 +50,8 @@ The operating system receives the system call, identifies the specific process b
 
 
 Q5:
-In real time, data is processed and calculations are executed immediately. In general, timing constraints must be met to ensure correct system behavior. In contrast, virtual time refers to the logical time a process or thread "lives" in — it can be paused and later resumed from the exact point it was stopped. Real-time systems respond to conditions or events under strict timing guarantees, while virtual time can be suspended.
+In real time, data is processed and calculations are executed immediately.
+In general, timing constraints must be met to ensure correct system behavior.
+In contrast, virtual time refers to the logical time a process or thread "lives" in — it can be paused and later resumed from the exact point it was stopped.
+Real-time systems respond to conditions or events under strict timing guarantees, while virtual time can be suspended.
 An example of a real-time system is a traffic light management system, which cannot "freeze" because traffic continues to flow and requires constant regulation.
