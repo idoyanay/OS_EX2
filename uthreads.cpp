@@ -173,7 +173,7 @@ void pre_junmping(){
 
 void end_of_quantum(int sig){
     // increase global variable as another thread about to run
-    
+    std::cout<<"detected end of quantom for thread "<< unblocked_threads.front() << std::endl;
 
     //wakeup any sleeping thread
     
@@ -227,6 +227,7 @@ int uthread_init(int quantum_usecs)
       * Function flow: block itimer-signal, checking MAX_THREADS and input, updaiting new tid, create and update the new thread, unblock itimer-signal
       */
      block_timer_signal();
+     std::cout<< "enter uthread_spawn" <<std::endl;
  
      int num_threads = unblocked_threads.size() + blocked_threads.size();
      if(num_threads >= MAX_THREAD_NUM) { // check if the number of threads is already at the maximum 
@@ -304,6 +305,7 @@ int uthread_init(int quantum_usecs)
       */
  
      block_timer_signal();
+     std::cout<<"uthread_terminate("<<tid<<")"<<std::endl;
      if(tid == 0){
          terminate_program();
      }
@@ -342,8 +344,8 @@ int uthread_init(int quantum_usecs)
  */
  int uthread_block(int tid){
      block_timer_signal();
+     std::cout<<"uthread_block("<<tid<<")"<<std::endl;
      
-     std::cout << "uthread_block: tid = " << tid << std::endl; // TODO - remove this line
      // print all ready threads:
      for(auto thread : unblocked_threads){
         std::cout<<"uthread_block: unblocked_threads tid = "<<thread->tid<<std::endl;
