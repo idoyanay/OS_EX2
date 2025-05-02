@@ -451,6 +451,7 @@ int uthread_init(int quantum_usecs)
  }
       
  int uthread_get_quantums(int tid){
+    block_timer_signal();
      bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
       || unused_tid.find(tid) != unused_tid.end() ;
      if(unvalid_tid){
@@ -466,5 +467,6 @@ int uthread_init(int quantum_usecs)
          auto blocked_itr = find_thread_in_list(blocked_threads, tid);
          return (*blocked_itr) -> quantom_count;
      }
+     unblock_timer_signal();
  }
  
