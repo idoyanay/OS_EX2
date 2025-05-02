@@ -304,14 +304,6 @@ int uthread_init(int quantum_usecs)
       */
  
      block_timer_signal();
-     std::cout<<"terminate  of thread "<<unblocked_threads.front()->tid << std::endl;
-     // print all ready blocks:
-     std::cout<<"------------"<<std::endl;
-     for (Thread *thread : unblocked_threads){
- 
-         std::cout<<"ready thread: "<<thread->tid << std::endl;
-     }
-     std::cout<<"------------"<<std::endl;
      if(tid == 0){
          terminate_program();
      }
