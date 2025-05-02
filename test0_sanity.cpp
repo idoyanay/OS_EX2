@@ -56,7 +56,7 @@ int main(void)
 		{
 			if(i == uthread_get_quantums(tid))
 			{
-				std::cout << "m" << tid << " Quanta:" <<  i << std::endl;
+				std::cout << "[MAIN] m" << tid << " Quanta:" <<  i << std::endl;
 				if (i == 3)
 				{
 					std::cout << "[MAIN] m spawns f at (1) " << uthread_spawn(f) << std::endl;
