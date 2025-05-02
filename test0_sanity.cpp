@@ -62,7 +62,7 @@ int main(void)
 					// std::cout << "m spawns f at (1) " << uthread_spawn(f) << std::endl;
 					// std::cout << "m spawns g at (2) " << uthread_spawn(g) << std::endl;
 				}
-				if (i == 10)
+				if (i == 100)
 				{
 					std::cout << "Total Quantums: " << uthread_get_total_quantums() << std::endl;
 					uthread_terminate(tid);
