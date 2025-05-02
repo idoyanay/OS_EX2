@@ -343,6 +343,10 @@ int uthread_init(int quantum_usecs)
      block_timer_signal();
      
      std::cout << "uthread_block: tid = " << tid << std::endl; // TODO - remove this line
+     // print all ready threads:
+     for(auto thread : unblocked_threads){
+        std::cout<<"uthread_block: unblocked_threads tid = "<<thread->tid<<std::endl;
+     }
      int succses = 0;
  
      bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
