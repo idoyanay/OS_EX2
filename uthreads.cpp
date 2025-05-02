@@ -99,27 +99,7 @@
      }
  }
  
- void end_of_quantum(int sig){
-     // increase global variable as another thread about to run
-     
- 
-     //wakeup any sleeping thread
-     
- 
-     Thread *prev_run = unblocked_threads.front();
-     if (unblocked_threads.size() > 1){ // if there is another ready thread
-         unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
-         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
-         unblocked_threads.pop_front(); // removing the thread from the list
-         unblocked_threads.front()->state = ThreadState::RUNNING; // updating the runnign thread
-     }
- 
-     
-     if (sigsetjmp(prev_run->env, 1) == 0){
-         pre_junmping();
-         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
-     }
- }
+
  
  address_t translate_address(address_t addr)
  {
@@ -190,7 +170,29 @@ void pre_junmping(){
     start_timer();
 }
  
- int uthread_init(int quantum_usecs) 
+
+void end_of_quantum(int sig){
+    // increase global variable as another thread about to run
+    
+
+    //wakeup any sleeping thread
+    
+
+    Thread *prev_run = unblocked_threads.front();
+    if (unblocked_threads.size() > 1){ // if there is another ready thread
+        unblocked_threads.front()->state = ThreadState::READY; // updating the running thread
+        unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
+        unblocked_threads.pop_front(); // removing the thread from the list
+        unblocked_threads.front()->state = ThreadState::RUNNING; // updating the runnign thread
+    }
+
+    
+    if (sigsetjmp(prev_run->env, 1) == 0){
+        pre_junmping();
+        siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
+    }
+}
+int uthread_init(int quantum_usecs) 
  {
      /**
       * Function flow: checking input, init sigset and quantum-global, create main thread, updaiting sig-hangler, updaiting itimer.
