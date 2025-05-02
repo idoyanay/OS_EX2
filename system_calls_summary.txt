@@ -1,0 +1,88 @@
+
+System Calls and Functions Summary (with Return Values)
+
+Timer-related system calls
+-------------------------------------------------------
+Function: setitimer
+Purpose: Set a timer
+What it does: Sets a timer that sends a signal (e.g., SIGVTALRM) after a given amount of virtual time.
+Return value: 0 on success, -1 on error (sets errno).
+
+Function: getitimer
+Purpose: Get timer value
+What it does: Retrieves the remaining time until the next timer fires.
+Return value: 0 on success, -1 on error (sets errno).
+
+Signal handling functions
+-------------------------------------------------------
+Function: sigaction
+Purpose: Set a signal handler
+What it does: Defines what function to run when a specific signal (e.g., SIGVTALRM) is received.
+Return value: 0 on success, -1 on error (sets errno).
+
+Function: sigprocmask
+Purpose: Block/unblock signals
+What it does: Changes which signals are blocked from being delivered to the process.
+Return value: 0 on success, -1 on error (sets errno).
+
+Function: sigemptyset
+Purpose: Create an empty signal set
+What it does: Initializes a sigset_t to be empty (no signals).
+Return value: 0 on success, -1 on error.
+
+Function: sigaddset
+Purpose: Add a signal to set
+What it does: Adds a specific signal to a signal set (e.g., add SIGVTALRM).
+Return value: 0 on success, -1 on error.
+
+Function: sigdelset
+Purpose: Remove signal from set
+What it does: Removes a specific signal from a signal set.
+Return value: 0 on success, -1 on error.
+
+Function: sigfillset
+Purpose: Fill set with all signals
+What it does: Adds all possible signals to a signal set.
+Return value: 0 on success, -1 on error.
+
+Function: sigismember
+Purpose: Check if a signal is in set
+What it does: Checks whether a specific signal is a member of the signal set.
+Return value: 1 if member, 0 if not, -1 on error.
+
+Function: sigpending
+Purpose: Get pending signals
+What it does: Fills set with signals that have been raised but are currently blocked.
+Return value: 0 on success, -1 on error (sets errno).
+
+Function: sigwait
+Purpose: Wait for a signal
+What it does: Suspends execution until one of the signals in the set is delivered.
+Return value: 0 on success (with *sig set), error code otherwise.
+
+Context switching functions
+-------------------------------------------------------
+Function: sigsetjmp
+Purpose: Save CPU context
+What it does: Saves the current program execution context (PC, SP, registers, optionally the signal mask) into env.
+Return value: 0 when saving, nonzero if returning via siglongjmp.
+
+Function: siglongjmp
+Purpose: Restore CPU context
+What it does: Restores the context saved by sigsetjmp, resuming program execution.
+Return value: Does not return normally; resumes execution as if sigsetjmp returned val.
+
+Practical Usage in uthreads Project
+-------------------------------------------------------
+- Use sigaction to install a handler for SIGVTALRM once.
+- Use setitimer to trigger periodic quantum expirations.
+- Use sigsetjmp to save thread states and siglongjmp to restore them.
+- Use sigprocmask to block signals during critical thread state changes.
+- Use sigemptyset, sigaddset, sigfillset to build proper signal masks.
+- sigpending and sigwait are less critical for basic uthreads switching, but good to know.
+
+Final Notes
+-------------------------------------------------------
+- Most of these system calls return 0 on success and -1 on error, setting errno.
+- sigsetjmp and siglongjmp are unique: they behave more like "save/restore" execution points.
+- These functions enable full user-level threading: controlling time slicing, signal management, and thread context switches without kernel involvement.
