@@ -209,6 +209,9 @@ int uthread_init(int quantum_usecs)
      }
  
      init_itimer_sigset(); // init the sigset for later blocking and unblocking the itimer-signal
+     for (int i = 1; i < 100; ++i) { // init the unuset_tid (like a basket of all the 'free-tid' numbers). the 0 tid is already using
+        unused_tid.insert(i);
+     }
      quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
      unblocked_threads.push_front(new Thread{0, ThreadState::RUNNING, {}, {}, 0, 0}); // initializing main thread
      if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
@@ -244,13 +247,9 @@ int uthread_init(int quantum_usecs)
          return -1;
      }
      
-     int tid;
-     if (!unused_tid.empty()) { // if there is an tid that had terminated and we need to take his tid
-         tid = *unused_tid.begin(); // get the smallest TID
-         unused_tid.erase(unused_tid.begin()); // remove it from the set
-     } else {
-         tid = num_threads; // the tid's starts from 0, so the number of current threads is the new tid.
-     }
+     int tid = *unused_tid.begin(); // get the smallest TID
+     unused_tid.erase(unused_tid.begin()); // remove it from the set
+
      Thread *new_thread = new Thread{tid, ThreadState::READY, {}, {}, 0, 0}; // create new thread
      setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
      unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
@@ -357,8 +356,7 @@ int uthread_init(int quantum_usecs)
     //  }
      int succses = 0;
  
-     bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
-      || unused_tid.find(tid) != unused_tid.end() || tid == 0;
+     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid > 99 || tid <= 0;
      if( unvalid_tid){
          print_error("uthread_block: unvalid tid", PrintType::THREAD_LIB_ERR);
          succses = -1;
@@ -399,8 +397,7 @@ int uthread_init(int quantum_usecs)
  int uthread_resume(int tid){
      block_timer_signal();
      //check for unvalid index
-     bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
-                         || unused_tid.find(tid) != unused_tid.end();
+     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid > 99 || tid < 0;
      if(unvalid_tid){
          print_error("uthread_resume: unvalid tid", PrintType::THREAD_LIB_ERR);
          return -1;
@@ -452,8 +449,7 @@ int uthread_init(int quantum_usecs)
       
  int uthread_get_quantums(int tid){
     block_timer_signal();
-     bool unvalid_tid = (int)(unblocked_threads.size() + blocked_threads.size()) <= tid
-      || unused_tid.find(tid) != unused_tid.end() ;
+    bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid > 99 || tid < 0;
      int ret_val;
      if(unvalid_tid){
          print_error("uthread_get_quantums: unvalid tid " + std::to_string(tid), PrintType::THREAD_LIB_ERR);
