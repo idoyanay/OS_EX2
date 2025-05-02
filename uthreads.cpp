@@ -424,7 +424,8 @@ int uthread_init(int quantum_usecs)
  
  
      unblock_timer_signal();
- }
+     return 0;
+}
  
  int uthread_get_tid(){
          return unblocked_threads.front()->tid;
