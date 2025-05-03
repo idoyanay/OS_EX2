@@ -142,13 +142,11 @@ void test_block_sleeping_thread(){
 
     int tid_sleeping_thread = uthread_spawn(sleep_entrypoint); // tid 1
     send_sigalarm(); // jump to tid 1 -> tid1 will go to sleep -> go back here
-    int blocked_quantum = uthread_get_quantums(tid_sleeping_thread); // should not change
-    std::cout<<"blocked quantum: "<<blocked_quantum<<std::endl;
     uthread_block(1);
-    blocked_quantum = uthread_get_quantums(tid_sleeping_thread); // should not change
-    std::cout<<"blocked quantum: "<<blocked_quantum<<std::endl;
     send_sigalarm(); // wait for sleeping time to pass
+    std::cout<<"blocked_quantum after one sigalarm: "<<uthread_get_quantums(tid_sleeping_thread)<<std::endl;
     send_sigalarm(); // wait for sleeping time to pass
+    std::cout<<"blocked_quantum after two sigalarm: "<<uthread_get_quantums(tid_sleeping_thread)<<std::endl;
     assert(uthread_get_quantums(tid_sleeping_thread) == 1); // check that tid 1 doesn't run more than once
     uthread_resume(1);
     assert(uthread_get_tid() == 0);
