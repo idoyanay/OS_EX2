@@ -194,6 +194,7 @@ int uthread_init(int quantum_usecs)
     }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
+    std::cout<<"thread "<<unblocked_threads.front()->tid<<" located in "<<static_cast<void*>(unblocked_threads.front())<<std::endl;
     if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
         // create and update the sig-handler
@@ -227,6 +228,7 @@ int uthread_spawn(thread_entry_point entry_point){
     unused_tid.erase(unused_tid.begin()); // remove it from the set
 
     Thread *new_thread = new Thread{tid, {}, {}, 0, 0, false, false}; // create new thread
+    std::cout<<"thread "<<new_thread->tid<<" located in "<<static_cast<void*>(new_thread)<<std::endl;
     setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
     unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
     
