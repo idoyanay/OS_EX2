@@ -362,7 +362,6 @@ void test_thread_functions_in_threads() {
     // Wait for threads to run
     int current_quantom_counter = uthread_get_total_quantums();
     while(uthread_get_total_quantums() < current_quantom_counter + 5);
-    for (volatile int i = 0; i < 2000000; i++) {}
     
     // Check that global_counter has been incremented at least twice
     // Once by spawner and once by its child
