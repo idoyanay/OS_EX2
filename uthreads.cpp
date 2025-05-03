@@ -305,6 +305,7 @@ int uthread_terminate(int tid){
 
 int uthread_block(int tid){
     block_timer_signal();
+    std::cout<<"entered block tid with "<<tid<<std::endl;
     int ret_val = 0;
     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid >= MAX_THREAD_NUM || tid <= 0;
     if( unvalid_tid){
@@ -312,12 +313,14 @@ int uthread_block(int tid){
         ret_val = -1;
     }
     
-    
+
     else if(unblocked_threads.front()->tid == tid){
+        std::cout<<"block tid with "<<tid<<" is the running thread"<<std::endl;
         Thread* thread_ptr = unblocked_threads.front();
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
+            std::cout<<"jumping to thread "<<unblocked_threads.front()->tid<<" after blocking thread"<<thread_ptr->tid<<std::endl;
             pre_jumping();
             unblock_timer_signal();
             std::cout<<"jumping to thread "<<unblocked_threads.front()->tid<<" after blocking thread"<<thread_ptr->tid<<std::endl;
