@@ -240,11 +240,13 @@ int uthread_spawn(thread_entry_point entry_point){
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
     for (Thread* t : blocked_threads) {
+        std::cout<<"delting "<<t->tid<<" located in "<<static_cast<void*>(t)<<std::endl;
         delete t;
     }
     blocked_threads.clear();
 
     for (Thread* t : unblocked_threads) {
+        std::cout<<"delting "<<t->tid<<" located in "<<static_cast<void*>(t)<<std::endl;
         delete t;
     }
     unblocked_threads.clear();
@@ -287,6 +289,7 @@ int uthread_terminate(int tid){
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
         Thread *terminated_thread = unblocked_threads.front();
+        std::cout<<"delting "<<terminated_thread->tid<<" located in "<<static_cast<void*>(terminated_thread)<<std::endl;
         unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
         delete terminated_thread;
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
