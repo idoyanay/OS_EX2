@@ -33,7 +33,7 @@ int failed_tests = 0;
 
 // Global variables for testing
 int global_counter = 0;
-int quantum_usecs = 10000; // 10ms quantum
+int quantum_usecs = 1000; // 10ms quantum
 int thread_ids[MAX_THREAD_NUM];
 
 // Thread functions for testing
