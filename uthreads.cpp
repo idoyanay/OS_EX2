@@ -87,7 +87,6 @@ void wakeup_sleeping_threads()
 {
     // Wake up any sleeping threads
     for (auto thread_itr = blocked_threads.begin(); thread_itr != blocked_threads.end(); ) {
-        std::cout<<"TID "<<(*thread_itr)->tid<<": wake_up_quantum "<<(*thread_itr)->wake_up_quantum<<" total_quantums "<<total_quantums<<std::endl;
         if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->wake_up_quantum != 0) {
             Thread* thread_ptr = *thread_itr;
             unblocked_threads.push_back(thread_ptr);
@@ -95,7 +94,6 @@ void wakeup_sleeping_threads()
         }
         thread_itr++;
     }
-    std::cout<<"finisng wakeup"<<std::endl;
 }
 
 
@@ -153,14 +151,10 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
-    std::cout<<"enter pre jumping"<<std::endl;
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
-    std::cout<<"waking up sleeping threads"<<std::endl;
     wakeup_sleeping_threads();
-    std::cout<<"start timer"<<std::endl;
     start_timer();
-    std::cout<<"exit pre jumping"<<std::endl;
 }
  
 
@@ -178,7 +172,6 @@ void end_of_quantum(int sig){
         start_timer();
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
     }
-    std::cout<<"just returned to thread "<<prev_run->tid<<" after jumping to thread "<<unblocked_threads.front()->tid<<std::endl;
     return;
 }
 
@@ -310,7 +303,6 @@ int uthread_terminate(int tid){
 
 int uthread_block(int tid){
     block_timer_signal();
-    std::cout<<"entered block tid with "<<tid<<std::endl;
     int ret_val = 0;
     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid >= MAX_THREAD_NUM || tid <= 0;
     if( unvalid_tid){
@@ -320,16 +312,16 @@ int uthread_block(int tid){
     
 
     else if(unblocked_threads.front()->tid == tid){
-        std::cout<<"block tid with "<<tid<<" is the running thread"<<std::endl;
+
         Thread* thread_ptr = unblocked_threads.front();
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
-            std::cout<<"enterd jumping section"<<std::endl;
+    
             pre_jumping();
-            std::cout<<"did pre_jumping"<<std::endl;
+    
             unblock_timer_signal();
-            std::cout<<"did unblock_timer_signal"<<std::endl;
+    
             siglongjmp(unblocked_threads.front()->env, 1);
         }
     }
