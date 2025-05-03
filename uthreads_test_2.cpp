@@ -140,12 +140,12 @@ void test_sleep(){
 void test_block_sleeping_thread(){
     // blocking a sleeping thread, after the sleeping period passed, it should still be blocked
 
-    uthread_spawn(sleep_entrypoint); // tid 1
+    int tid_sleeping_thread = uthread_spawn(sleep_entrypoint); // tid 1
     send_sigalarm(); // jump to tid 1 -> tid1 will go to sleep -> go back here
     uthread_block(1);
     send_sigalarm(); // wait for sleeping time to pass
     send_sigalarm(); // wait for sleeping time to pass
-    assert(uthread_get_quantums(1) == 1); // check that tid 1 doesn't run more than once
+    assert(uthread_get_quantums(tid_sleeping_thread) == 1); // check that tid 1 doesn't run more than once
     uthread_resume(1);
     assert(uthread_get_tid() == 0);
     printf("Passed Block Sleeping thread Test!\n");
