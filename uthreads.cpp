@@ -324,6 +324,7 @@ int uthread_terminate(int tid){
             return -1;
         }
     }
+    std::cerr<<"ending terminate"<<std::endl;
     print_all_threads_locations();
     unblock_timer_signal();
     return 0;
