@@ -175,7 +175,7 @@ void test_block_resume() {
     // Spawn a thread that blocks itself
     int block_tid = uthread_spawn(thread_block_itself);
     thread_ids[block_tid] = 1;
-    
+
     TEST_ASSERT(block_tid > 0, "Spawn thread for block test");
     
     // Let the thread run and block itself
@@ -191,7 +191,7 @@ void test_block_resume() {
     TEST_ASSERT(ret == 0, "Resume returns success");
     
     // Wait for thread to run
-    for (volatile int i = 0; i < 2000000; i++) {}
+    while(uthread_get_tid() != block_tid);
     
     // Check that global_counter has been incremented after resume
     TEST_ASSERT(global_counter == 1, "Thread resumed and incremented counter");
