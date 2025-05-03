@@ -173,9 +173,7 @@ void end_of_quantum(int sig){
         start_timer();
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
     }
-    else{
-        std::cout<<"just returned to thread "<<prev_run->tid<<" after jumping to thread "<<unblocked_threads.front()->tid<<std::endl;
-    }
+    std::cout<<"just returned to thread "<<prev_run->tid<<" after jumping to thread "<<unblocked_threads.front()->tid<<std::endl;
     return;
 }
 
