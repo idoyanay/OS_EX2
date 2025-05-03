@@ -12,7 +12,7 @@ CXXFLAGS = -Wall -std=c++11 -g $(INCS)
 OSMLIB = libuthreads.a
 TARGETS = $(OSMLIB)
 
-TAR=tara
+TAR=tar
 TARFLAGS=-cvf
 TARNAME=ex2.tar
 TARSRCS=$(LIBSRC) Makefile README
