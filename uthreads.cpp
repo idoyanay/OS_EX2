@@ -388,6 +388,13 @@ int uthread_get_quantums(int tid){
     int ret_val;
     if(unvalid_tid){
         print_error("uthread_get_quantums: unvalid tid " + std::to_string(tid), PrintType::THREAD_LIB_ERR);
+        // print all the tid of all the threads 
+        for(auto itr = unblocked_threads.begin(); itr != unblocked_threads.end(); ++itr){
+            std::cout << "tid: " << (*itr) -> tid << std::endl;
+        }
+        for(auto itr = blocked_threads.begin(); itr != blocked_threads.end(); ++itr){
+            std::cout << "tid: " << (*itr) -> tid << std::endl;
+        }
         ret_val = -1;
     }
     else{
