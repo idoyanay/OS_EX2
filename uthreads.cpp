@@ -314,6 +314,7 @@ int uthread_block(int tid){
     
 
     else if(unblocked_threads.front()->tid == tid){
+        std::cout<<"blocking runnign thread "<<unblocked_threads.front()->tid<<std::endl;
         Thread* thread_ptr = unblocked_threads.front();
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
@@ -326,6 +327,7 @@ int uthread_block(int tid){
     else{ // meaning, if the wanted thread is valid and not the running one, need to find it in the unblocked list or do nothing
         auto thread_itr = find_thread_in_list(unblocked_threads, tid); 
         if(thread_itr != unblocked_threads.end()){  // if thread not block
+            std::cout<<"blockign ready thread "<<tid<<std::endl;
             Thread* thread_ptr = *thread_itr;         
             unblocked_threads.erase(thread_itr); // remove from the ready/running list
             blocked_threads.push_back(thread_ptr);  // move to the blocked list
@@ -388,13 +390,6 @@ int uthread_get_quantums(int tid){
     int ret_val;
     if(unvalid_tid){
         print_error("uthread_get_quantums: unvalid tid " + std::to_string(tid), PrintType::THREAD_LIB_ERR);
-        // print all the tid of all the threads 
-        for(auto itr = unblocked_threads.begin(); itr != unblocked_threads.end(); ++itr){
-            std::cout << "tid: " << (*itr) -> tid << std::endl;
-        }
-        for(auto itr = blocked_threads.begin(); itr != blocked_threads.end(); ++itr){
-            std::cout << "tid: " << (*itr) -> tid << std::endl;
-        }
         ret_val = -1;
     }
     else{
