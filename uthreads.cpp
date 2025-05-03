@@ -155,7 +155,9 @@ void pre_jumping()
     std::cout<<"enter pre jumping"<<std::endl;
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
+    std::cout<<"waking up sleeping threads"<<std::endl;
     wakeup_sleeping_threads();
+    std::cout<<"start timer"<<std::endl;
     start_timer();
     std::cout<<"exit pre jumping"<<std::endl;
 }
