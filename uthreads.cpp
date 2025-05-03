@@ -86,7 +86,6 @@ void start_timer()
 void wakeup_sleeping_threads()
 {
     // Wake up any sleeping threads
-    std::cout<<"enter wakeup_sleeping_threads"<<std::endl;
 
     for (auto thread_itr = blocked_threads.begin(); thread_itr != blocked_threads.end(); ) {
         if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->wake_up_quantum != 0) {
@@ -96,7 +95,6 @@ void wakeup_sleeping_threads()
         }
         thread_itr++;
     }
-    std::cout<<"exit wakeup_sleeping_threads"<<std::endl;
 }
 
 
@@ -154,12 +152,10 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
-    std::cout<<"enter pre jumping "<<std::endl;
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
     start_timer();
-    std::cout<<"exit pre jumping "<<std::endl;
 }
  
 
@@ -361,18 +357,15 @@ int uthread_resume(int tid){
 }
 int uthread_sleep(int num_quantums){
     block_timer_signal(); // Block the timer signal to prevent interruptions.
-    std::cout<<"enter uthread sleep with tid "<< unblocked_threads.front()->tid<<" for "<<num_quantums<<" quantums"<<std::endl;
     if(unblocked_threads.front()->tid == 0){ // Ensure the main thread is not trying to sleep.
         print_error("uthread_sleep: trying to put main thread to sleep", PrintType::THREAD_LIB_ERR);
         return -1;
     }
     Thread *prev_running = unblocked_threads.front();
     prev_running-> wake_up_quantum = total_quantums + num_quantums - 1; // Set the wake-up quantum for the thread.
-    std::cout<<"set wake up quantum to "<<prev_running->wake_up_quantum<<" for thread "<<prev_running->tid<<std::endl;
     blocked_threads.push_back(prev_running); // Move the running thread to the blocked list.
     unblocked_threads.pop_front(); // Remove the thread from the unblocked list.
     if(sigsetjmp(prev_running->env, 1) == 0){ // Save the current thread's context.
-        std::cout<<"jumping to thread "<<unblocked_threads.front()->tid<<std::endl;
         pre_jumping(); // Perform actions before switching threads.
         unblock_timer_signal(); // Unblock the timer signal before switching.
         siglongjmp(unblocked_threads.front()->env, 1); // Switch to the next thread's context.
