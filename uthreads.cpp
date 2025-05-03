@@ -87,7 +87,9 @@ void wakeup_sleeping_threads()
 {
     // Wake up any sleeping threads
     std::cout<<"enter wakeup_sleeping_threads"<<std::endl;
+
     for (auto thread_itr = blocked_threads.begin(); thread_itr != blocked_threads.end(); ) {
+        std::cout<<"wakeup_sleeping_threads: thread_itr->wake_up_quantum = "<<(*thread_itr)->wake_up_quantum<<" total_quantums = "<<total_quantums<<" for thread "<<(*thread_itr)->tid<<std::endl;
         if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->wake_up_quantum != 0) {
             Thread* thread_ptr = *thread_itr;
             unblocked_threads.push_back(thread_ptr);
