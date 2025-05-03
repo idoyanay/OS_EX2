@@ -240,12 +240,12 @@ int uthread_spawn(thread_entry_point entry_point){
 
 void print_all_threads_locations(){
     for (Thread* t : blocked_threads) {
-        std::cerr << "Deleting thread with tid=" << t->tid
+        std::cerr << "Location of  thread with tid=" << t->tid
           << " at address " << static_cast<void*>(t) << std::endl;
     }
 
     for (Thread* t : unblocked_threads) {
-        std::cerr << "Deleting thread with tid=" << t->tid
+        std::cerr << "Location of thread with tid=" << t->tid
           << " at address " << static_cast<void*>(t) << std::endl;
     }
 }
