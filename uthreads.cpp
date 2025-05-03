@@ -194,6 +194,8 @@ int uthread_init(int quantum_usecs)
     }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
+    std::cerr << "Allocated thread tid=" << unblocked_threads.front()->tid
+          << " at address " << static_cast<void*>(unblocked_threads.front()) << std::endl;
     if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
         // create and update the sig-handler
@@ -227,6 +229,8 @@ int uthread_spawn(thread_entry_point entry_point){
     unused_tid.erase(unused_tid.begin()); // remove it from the set
 
     Thread *new_thread = new Thread{tid, {}, {}, 0, 0, false, false}; // create new thread
+    std::cerr << "Allocated thread tid=" << new_thread->tid
+          << " at address " << static_cast<void*>(new_thread) << std::endl;
     setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
     unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
     
@@ -237,11 +241,16 @@ int uthread_spawn(thread_entry_point entry_point){
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
     for (Thread* t : blocked_threads) {
+        std::cerr << "Deleting thread with tid=" << t->tid
+          << " at address " << static_cast<void*>(t) << std::endl;
+
         delete t;
     }
     blocked_threads.clear();
 
     for (Thread* t : unblocked_threads) {
+        std::cerr << "Deleting thread with tid=" << t->tid
+          << " at address " << static_cast<void*>(t) << std::endl;
         delete t;
     }
     unblocked_threads.clear();
