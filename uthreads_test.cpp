@@ -43,10 +43,12 @@ void thread_sleep_test() {
     uthread_sleep(2);
     printf("Thread %d woke up\n", tid);
     global_counter++;
+    while(1);
 }
 
 void thread_increment() {
     global_counter++;
+    while(1);
 }
 
 void thread_long_run() {
@@ -55,6 +57,7 @@ void thread_long_run() {
     for (volatile int i = 0; i < 1000000; i++) {}
     global_counter++;
     printf("Thread %d finished long run\n", uthread_get_tid());
+    while(1);
 }
 
 void thread_block_itself() {
@@ -64,6 +67,7 @@ void thread_block_itself() {
     // This should only run after being resumed
     printf("Thread %d resumed after self-block\n", tid);
     global_counter++;
+    while(1);
 }
 
 void thread_with_sleep_and_terminate() {
@@ -74,6 +78,7 @@ void thread_with_sleep_and_terminate() {
     uthread_terminate(tid);
     // This should never be reached
     global_counter = -999;
+    while(1);
 }
 
 void thread_spawner() {
@@ -85,6 +90,7 @@ void thread_spawner() {
         printf("Thread %d spawned thread %d\n", tid, new_tid);
     }
     global_counter++;
+    while(1);
 }
 
 // Test cases
