@@ -28,7 +28,7 @@
  #define JB_SP 6
  #define JB_PC 7
  enum class PrintType { SYSTEM_ERR, THREAD_LIB_ERR }; // print type for the error printing
- 
+ enum class BlockedType {SLEEP, BLOCK, UNBLOCKED};               // types of blocking
  // struct that contain all the relevant data
  struct Thread { 
      int tid;
@@ -36,6 +36,8 @@
      char stack[STACK_SIZE];     // Stack memory (only needed for non-main threads)
      int wake_up_quantum;        // the 'time' for a sleeping thread to wake up
      int quantom_count;          // number of runnign quantoms for this thread
+     bool blocked;               // true if the thread is blocked
+     bool sleeping;              // true if the thread is sleeping
  };
  
  static struct itimerval timer;                  // timer object for all the threads
@@ -88,7 +90,7 @@ void wakeup_sleeping_threads()
     // Wake up any sleeping threads
 
     for (auto thread_itr = blocked_threads.begin(); thread_itr != blocked_threads.end(); ) {
-        if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->wake_up_quantum != 0) {
+        if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->sleeping && !(*thread_itr)->blocked) {
             Thread* thread_ptr = *thread_itr;
             unblocked_threads.push_back(thread_ptr);
             thread_itr = blocked_threads.erase(thread_itr);
@@ -191,7 +193,7 @@ int uthread_init(int quantum_usecs)
         unused_tid.insert(i);
     }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
-    unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0}); // initializing main thread
+    unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
     if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
         // create and update the sig-handler
@@ -224,7 +226,7 @@ int uthread_spawn(thread_entry_point entry_point){
     int tid = *unused_tid.begin(); // get the smallest TID
     unused_tid.erase(unused_tid.begin()); // remove it from the set
 
-    Thread *new_thread = new Thread{tid, {}, {}, 0, 0}; // create new thread
+    Thread *new_thread = new Thread{tid, {}, {}, 0, 0, false, false}; // create new thread
     setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
     unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
     
@@ -316,6 +318,7 @@ int uthread_block(int tid){
     else if(unblocked_threads.front()->tid == tid){
         std::cout<<"blocking runnign thread "<<unblocked_threads.front()->tid<<std::endl;
         Thread* thread_ptr = unblocked_threads.front();
+        thread_ptr->blocked = true;
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
@@ -329,6 +332,7 @@ int uthread_block(int tid){
         if(thread_itr != unblocked_threads.end()){  // if thread not block
             std::cout<<"blockign ready thread "<<tid<<std::endl;
             Thread* thread_ptr = *thread_itr;         
+            thread_ptr->blocked = true;
             unblocked_threads.erase(thread_itr); // remove from the ready/running list
             blocked_threads.push_back(thread_ptr);  // move to the blocked list
         }
@@ -351,8 +355,12 @@ int uthread_resume(int tid){
     auto thread_itr = find_thread_in_list(blocked_threads, tid); 
     if(thread_itr != blocked_threads.end()){
         Thread* thread_ptr = *thread_itr;         // get the pointer
-        blocked_threads.erase(thread_itr);        // remove from the blocked list
-        unblocked_threads.push_back(thread_ptr);  // insert at the back of the ready list
+        thread_ptr->blocked = false;
+        if(!(thread_ptr->sleeping)){
+            blocked_threads.erase(thread_itr);        // remove from the blocked list
+            unblocked_threads.push_back(thread_ptr);  // insert at the back of the ready list
+        }
+        
     }
     unblock_timer_signal();
     return 0;
@@ -365,6 +373,7 @@ int uthread_sleep(int num_quantums){
     }
     Thread *prev_running = unblocked_threads.front();
     prev_running-> wake_up_quantum = total_quantums + num_quantums - 1; // Set the wake-up quantum for the thread.
+    prev_running->sleeping = true; // Set the sleeping flag for the thread.
     blocked_threads.push_back(prev_running); // Move the running thread to the blocked list.
     unblocked_threads.pop_front(); // Remove the thread from the unblocked list.
     if(sigsetjmp(prev_running->env, 1) == 0){ // Save the current thread's context.
