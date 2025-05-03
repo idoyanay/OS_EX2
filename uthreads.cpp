@@ -238,6 +238,17 @@ int uthread_spawn(thread_entry_point entry_point){
     return new_thread->tid;
 }
 
+void print_all_threads_locations(){
+    for (Thread* t : blocked_threads) {
+        std::cerr << "Deleting thread with tid=" << t->tid
+          << " at address " << static_cast<void*>(t) << std::endl;
+    }
+
+    for (Thread* t : unblocked_threads) {
+        std::cerr << "Deleting thread with tid=" << t->tid
+          << " at address " << static_cast<void*>(t) << std::endl;
+    }
+}
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
     for (Thread* t : blocked_threads) {
@@ -290,15 +301,14 @@ int uthread_terminate(int tid){
     if(tid == 0){
         terminate_program();
     }
-    
+    print_all_threads_locations();
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
-        std::cout<<"uthread_terminate: tid="<<tid<<" is the running thread."<<std::endl;
+        // std::cout<<"uthread_terminate: tid="<<tid<<" is the running thread."<<std::endl;
         Thread *terminated_thread = unblocked_threads.front();
-        std::cout<<"terminated_thread tid is "<<terminated_thread->tid<<" at " << static_cast<void*>(terminated_thread) << std::endl;
+        // std::cout<<"terminated_thread tid is "<<terminated_thread->tid<<" at " << static_cast<void*>(terminated_thread) << std::endl;
         unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
-        std::cout << "Deleting ------  thread tid=" << terminated_thread->tid << " at " << static_cast<void*>(terminated_thread) << std::endl;
-
+        // std::cout << "Deleting ------  thread tid=" << terminated_thread->tid << " at " << static_cast<void*>(terminated_thread) << std::endl;
         delete terminated_thread;
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
         
@@ -314,6 +324,7 @@ int uthread_terminate(int tid){
             return -1;
         }
     }
+    print_all_threads_locations();
     unblock_timer_signal();
     return 0;
 }
