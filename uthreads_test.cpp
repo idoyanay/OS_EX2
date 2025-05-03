@@ -33,7 +33,7 @@ int failed_tests = 0;
 
 // Global variables for testing
 int global_counter = 0;
-int quantum_usecs = 1000; // 10ms quantum
+int quantum_usecs = 10000; // 10ms quantum
 int thread_ids[MAX_THREAD_NUM];
 
 // Thread functions for testing
@@ -175,6 +175,7 @@ void test_block_resume() {
     // Spawn a thread that blocks itself
     int block_tid = uthread_spawn(thread_block_itself);
     thread_ids[block_tid] = 1;
+    for (volatile int i = 0; i < 1000000; i++) {}
     TEST_ASSERT(block_tid > 0, "Spawn thread for block test");
     
     // Let the thread run and block itself
@@ -185,6 +186,8 @@ void test_block_resume() {
     
     // Resume the thread
     int ret = uthread_resume(block_tid);
+    for (volatile int i = 0; i < 2000000; i++) {}
+
     TEST_ASSERT(ret == 0, "Resume returns success");
     
     // Wait for thread to run
