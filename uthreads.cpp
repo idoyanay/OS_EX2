@@ -314,16 +314,13 @@ int uthread_block(int tid){
     
 
     else if(unblocked_threads.front()->tid == tid){
-
         Thread* thread_ptr = unblocked_threads.front();
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
-    
             pre_jumping();
-    
+            std::cout<<"jumping to thread"<<unblocked_threads.front()->tid<<std::endl;
             unblock_timer_signal();
-    
             siglongjmp(unblocked_threads.front()->env, 1);
         }
     }
