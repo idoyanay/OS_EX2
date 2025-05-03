@@ -390,13 +390,15 @@ int uthread_get_quantums(int tid){
         print_error("uthread_get_quantums: unvalid tid " + std::to_string(tid), PrintType::THREAD_LIB_ERR);
         ret_val = -1;
     }
-    auto unblocked_itr = find_thread_in_list(unblocked_threads, tid);
-    if(unblocked_itr != unblocked_threads.end()){
-        ret_val = (*unblocked_itr) -> quantom_count; // Get the quantum count for the thread in the unblocked list.
-    }
     else{
-        auto blocked_itr = find_thread_in_list(blocked_threads, tid);
-        ret_val = (*blocked_itr) -> quantom_count; // Get the quantum count for the thread in the blocked list.
+        auto unblocked_itr = find_thread_in_list(unblocked_threads, tid);
+        if(unblocked_itr != unblocked_threads.end()){
+            ret_val = (*unblocked_itr) -> quantom_count; // Get the quantum count for the thread in the unblocked list.
+        }
+        else{
+            auto blocked_itr = find_thread_in_list(blocked_threads, tid);
+            ret_val = (*blocked_itr) -> quantom_count; // Get the quantum count for the thread in the blocked list.
+        }
     }
     unblock_timer_signal(); // Unblock the timer signal after execution.
     return ret_val;
