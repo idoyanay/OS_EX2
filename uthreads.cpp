@@ -318,7 +318,8 @@ int uthread_block(int tid){
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
             pre_jumping();
-            unblock_timer_signal(); // TODO - check if when we unblock -unblocked signals its OK
+            unblock_timer_signal();
+            std::cout<<"jumping to thread "<<unblocked_threads.front()->tid<<" after blocking thread"<<thread_ptr->tid<<std::endl;
             siglongjmp(unblocked_threads.front()->env, 1);
         }
     }
