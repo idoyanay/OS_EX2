@@ -86,6 +86,7 @@ void start_timer()
 void wakeup_sleeping_threads()
 {
     // Wake up any sleeping threads
+    std::cout<<"enter wakeup_sleeping_threads"<<std::endl;
     for (auto thread_itr = blocked_threads.begin(); thread_itr != blocked_threads.end(); ) {
         if ((*thread_itr)->wake_up_quantum <= total_quantums && (*thread_itr)->wake_up_quantum != 0) {
             Thread* thread_ptr = *thread_itr;
@@ -94,6 +95,7 @@ void wakeup_sleeping_threads()
         }
         thread_itr++;
     }
+    std::cout<<"exit wakeup_sleeping_threads"<<std::endl;
 }
 
 
@@ -151,10 +153,12 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
+    std::cout<<"enter pre jumping "<<std::endl;
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
     start_timer();
+    std::cout<<"exit pre jumping "<<std::endl;
 }
  
 
