@@ -92,9 +92,8 @@ void wakeup_sleeping_threads()
             Thread* thread_ptr = *thread_itr;
             unblocked_threads.push_back(thread_ptr);
             blocked_threads.erase(thread_itr);
-        } else {
-            thread_itr++;
         }
+        thread_itr++;
     }
     std::cout<<"finisng wakeup"<<std::endl;
 }
