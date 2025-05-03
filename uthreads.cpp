@@ -160,6 +160,7 @@ void pre_jumping()
 
 void end_of_quantum(int sig){    
     wakeup_sleeping_threads();
+
     Thread *prev_run = unblocked_threads.front();
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
@@ -350,6 +351,7 @@ int uthread_resume(int tid){
     
     auto thread_itr = find_thread_in_list(blocked_threads, tid); 
     if(thread_itr != blocked_threads.end()){
+        std::cout << "find wanted thread to resume with tid "<<(*thread_itr)->tid<<std::endl;
         Thread* thread_ptr = *thread_itr;         // get the pointer
         blocked_threads.erase(thread_itr);        // remove from the blocked list
         unblocked_threads.push_back(thread_ptr);  // insert at the back of the ready list
