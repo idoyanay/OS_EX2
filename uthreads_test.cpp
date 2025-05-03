@@ -2,9 +2,9 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <assert.h>
+#include <cassert>
 #include <unistd.h>
-#include <sys/time.h>
+#include <algorithm>
 
 // Test suite for user-level threads library
 // Compile with: g++ -std=c++11 -Wall uthreads_test.cpp -L. -luthreads -o test_uthreads
@@ -23,16 +23,9 @@ int total_tests = 0;
 int passed_tests = 0;
 std::vector<std::string> failed_tests;
 
-// Synchronized printing to avoid race conditions
+// Simple printing for debugging
 void safe_print(const std::string& msg) {
-    sigset_t mask, old_mask;
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGVTALRM);
-    sigprocmask(SIG_BLOCK, &mask, &old_mask);
-    
     std::cout << msg << std::endl;
-    
-    sigprocmask(SIG_SETMASK, &old_mask, NULL);
 }
 
 // Test helper function
@@ -74,7 +67,9 @@ void thread_func() {
                    std::to_string(thread_info[tid].iterations));
         
         // Yield to give other threads a chance
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
+        }
     }
     
     // Thread finishes by terminating itself
@@ -97,7 +92,9 @@ void blocking_thread_func() {
             uthread_block(tid);
         }
         
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
+        }
     }
     
     uthread_terminate(tid);
@@ -120,7 +117,9 @@ void sleeping_thread_func() {
             safe_print("Thread " + std::to_string(tid) + " woke up");
         }
         
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
+        }
     }
     
     uthread_terminate(tid);
@@ -174,7 +173,9 @@ bool test_thread_creation() {
     
     // Let threads run for a while
     for (int i = 0; i < 20; i++) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Check if all threads completed their iterations
@@ -201,7 +202,7 @@ bool test_thread_id_reuse() {
     
     // Create and terminate threads to free up IDs
     int tid1 = uthread_spawn(thread_func);
-    int tid2 = uthread_spawn(thread_func);
+    int tid2 = uthread_spawn(thread_func); // Keeping this for thread creation
     
     // Terminate thread 1
     uthread_terminate(tid1);
@@ -231,7 +232,9 @@ bool test_block_and_resume() {
     
     // Let it run until it blocks itself
     while (!thread_info[tid].blocked) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Make sure it's blocked at iteration 2
@@ -247,7 +250,9 @@ bool test_block_and_resume() {
     
     // Let it complete
     for (int i = 0; i < 10; i++) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Check if it completed all iterations
@@ -273,7 +278,9 @@ bool test_sleep() {
     
     // Let it run until it sleeps
     while (!thread_info[tid].slept) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Make sure it's sleeping at iteration 2
@@ -285,7 +292,9 @@ bool test_sleep() {
     
     // Wait for it to wake up and finish
     for (int i = 0; i < 15; i++) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Check if it completed all iterations
@@ -385,17 +394,19 @@ bool test_scheduling() {
     
     // Let them run for a while
     for (int i = 0; i < 20; i++) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Verify that scheduling was fair
-    int min_iterations = std::min(thread_info[tid1].iterations,
-                         std::min(thread_info[tid2].iterations,
-                                  thread_info[tid3].iterations));
+    int min_iterations = std::min({thread_info[tid1].iterations,
+                                  thread_info[tid2].iterations,
+                                  thread_info[tid3].iterations});
     
-    int max_iterations = std::max(thread_info[tid1].iterations,
-                         std::max(thread_info[tid2].iterations,
-                                  thread_info[tid3].iterations));
+    int max_iterations = std::max({thread_info[tid1].iterations,
+                                  thread_info[tid2].iterations,
+                                  thread_info[tid3].iterations});
     
     // The difference should not be too large in a fair scheduler
     bool fair_scheduling = (max_iterations - min_iterations <= 2);
@@ -429,7 +440,9 @@ bool test_double_block() {
     
     // Let it finish
     for (int i = 0; i < 10; i++) {
-        uthread_yield();
+        if (uthread_yield() != 0) {
+            safe_print("ERROR: Failed to yield main thread");
+        }
     }
     
     // Clean up
