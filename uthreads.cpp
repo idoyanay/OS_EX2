@@ -320,9 +320,11 @@ int uthread_block(int tid){
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
+            std::cout<<"enterd jumping section"<<std::endl;
             pre_jumping();
-            std::cout<<"jumping to thread "<<unblocked_threads.front()->tid<<" after blocking thread"<<thread_ptr->tid<<std::endl;
+            std::cout<<"did pre_jumping"<<std::endl;
             unblock_timer_signal();
+            std::cout<<"did unblock_timer_signal"<<std::endl;
             siglongjmp(unblocked_threads.front()->env, 1);
         }
     }
