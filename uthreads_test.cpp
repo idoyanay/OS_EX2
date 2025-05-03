@@ -179,7 +179,8 @@ void test_block_resume() {
     TEST_ASSERT(block_tid > 0, "Spawn thread for block test");
     
     // Let the thread run and block itself
-    for (volatile int i = 0; i < 1000000; i++) {}
+    while(uthread_get_tid() != block_tid);
+    for (volatile int i = 0; i < 10000; i++) {}
     
     // Check that global_counter hasn't been incremented because thread is blocked
     TEST_ASSERT(global_counter == 0, "Thread is blocked and didn't increment counter");
