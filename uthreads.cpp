@@ -160,6 +160,7 @@ void pre_jumping()
  
 
 void end_of_quantum(int sig){    
+    wakeup_sleeping_threads();
     Thread *prev_run = unblocked_threads.front();
     if (unblocked_threads.size() > 1){ // if there is another ready thread
         unblocked_threads.push_back(unblocked_threads.front()); // pushing the thread to the end of the list
@@ -167,8 +168,13 @@ void end_of_quantum(int sig){
     }
 
     if (sigsetjmp(prev_run->env, 1) == 0){
-        pre_jumping();
+        total_quantums++;
+        unblocked_threads.front()->quantom_count++;
+        start_timer();
         siglongjmp(unblocked_threads.front()->env, 1); // jumping to the thread's context
+    }
+    else{
+        std::cout<<"just returned to thread "<<prev_run->tid<<" after jumping to thread "<<unblocked_threads.front()->tid<<std::endl;
     }
     return;
 }
