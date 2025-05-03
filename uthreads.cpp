@@ -152,10 +152,12 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
+    std::cout<<"enter pre jumping"<<std::endl;
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
     start_timer();
+    std::cout<<"exit pre jumping"<<std::endl;
 }
  
 
