@@ -306,6 +306,7 @@ int uthread_block(int tid){
     block_timer_signal();
     std::cout<<"enter uthreads_block with tid "<< tid<<std::endl;
     int ret_val = 0;
+    std::cout<<"tid in usused_tid: "<<int(unused_tid.find(tid) != unused_tid.end())<<std::endl;
     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid >= MAX_THREAD_NUM || tid <= 0;
     if( unvalid_tid){
         print_error("uthread_block: unvalid tid", PrintType::THREAD_LIB_ERR);
