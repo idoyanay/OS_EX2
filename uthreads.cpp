@@ -309,6 +309,7 @@ int uthread_block(int tid){
     }
     
     else if(unblocked_threads.front()->tid == tid){
+        std::cout<<"got to blocknign the runnign thread"<<std::endl;
         Thread* thread_ptr = unblocked_threads.front();
         blocked_threads.push_back(thread_ptr); // move to the blocked list
         unblocked_threads.pop_front();          // remove from the ready/running list
