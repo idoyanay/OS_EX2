@@ -295,6 +295,7 @@ int uthread_terminate(int tid){
         // -- change the runnign thread to the next ready -- //
         std::cout<<"uthread_terminate: tid="<<tid<<" is the running thread."<<std::endl;
         Thread *terminated_thread = unblocked_threads.front();
+        std::cout<<"terminated_thread tid is "<<terminated_thread->tid<<std::endl;
         unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
         std::cerr << "Deleting thread tid=" << terminated_thread->tid << " at " << static_cast<void*>(terminated_thread) << std::endl;
 
