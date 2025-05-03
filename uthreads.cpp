@@ -304,7 +304,6 @@ int uthread_terminate(int tid){
 
 int uthread_block(int tid){
     block_timer_signal();
-    std::cout<<"enter uthreads_block with tid "<< tid<<std::endl;
     int ret_val = 0;
     bool unvalid_tid = unused_tid.find(tid) != unused_tid.end() || tid >= MAX_THREAD_NUM || tid <= 0;
     if( unvalid_tid){
@@ -319,7 +318,6 @@ int uthread_block(int tid){
         unblocked_threads.pop_front();          // remove from the ready/running list
         if(sigsetjmp(thread_ptr->env, 1) == 0){
             pre_jumping();
-            std::cout<<"jumping to thread"<<unblocked_threads.front()->tid<<std::endl;
             unblock_timer_signal();
             siglongjmp(unblocked_threads.front()->env, 1);
         }
@@ -349,7 +347,6 @@ int uthread_resume(int tid){
     
     auto thread_itr = find_thread_in_list(blocked_threads, tid); 
     if(thread_itr != blocked_threads.end()){
-        std::cout << "find wanted thread to resume with tid "<<(*thread_itr)->tid<<std::endl;
         Thread* thread_ptr = *thread_itr;         // get the pointer
         blocked_threads.erase(thread_itr);        // remove from the blocked list
         unblocked_threads.push_back(thread_ptr);  // insert at the back of the ready list
