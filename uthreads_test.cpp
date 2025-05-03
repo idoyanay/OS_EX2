@@ -1,484 +1,422 @@
 #include "uthreads.h"
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cassert>
-#include <unistd.h>
-#include <algorithm>
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <signal.h>
+#include <string.h>
+#include <sys/time.h>
 
-// Test suite for user-level threads library
-// Compile with: g++ -std=c++11 -Wall uthreads_test.cpp -L. -luthreads -o test_uthreads
+// Define colors for nicer test output
+#define RESET "\033[0m"
+#define GREEN "\033[32m"
+#define RED "\033[31m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
 
-// Colors for better test output
-#define RESET   "\033[0m"
-#define RED     "\033[31m"
-#define GREEN   "\033[32m"
-#define YELLOW  "\033[33m"
-#define BLUE    "\033[34m"
-
-#define QUANTUM_USECS 100000  // 100ms quantum
-
-// Global variables for testing
+// Test counters
 int total_tests = 0;
 int passed_tests = 0;
-std::vector<std::string> failed_tests;
+int failed_tests = 0;
 
-// Simple printing for debugging
-void safe_print(const std::string& msg) {
-    std::cout << msg << std::endl;
-}
+#define TEST_ASSERT(condition, message) \
+    do { \
+        total_tests++; \
+        if (condition) { \
+            passed_tests++; \
+            printf("%s[PASS]%s %s\n", GREEN, RESET, message); \
+        } else { \
+            failed_tests++; \
+            printf("%s[FAIL]%s %s\n", RED, RESET, message); \
+            printf("  Line %d in %s\n", __LINE__, __FILE__); \
+        } \
+    } while (0)
 
-// Test helper function
-bool run_test(const std::string& test_name, bool (*test_func)()) {
-    std::cout << BLUE << "[TEST] " << test_name << "... " << RESET;
-    total_tests++;
+// Global variables for testing
+int global_counter = 0;
+int quantum_usecs = 10000; // 10ms quantum
+int thread_ids[MAX_THREAD_NUM];
 
-    bool result = test_func();
-    if (result) {
-        std::cout << GREEN << "PASSED" << RESET << std::endl;
-        passed_tests++;
-    } else {
-        std::cout << RED << "FAILED" << RESET << std::endl;
-        failed_tests.push_back(test_name);
-    }
-    return result;
-}
-
-// Helper functions for thread operations
-int thread_counter = 0;
-struct ThreadInfo {
-    int tid;
-    int iterations;
-    bool blocked;
-    bool resumed;
-    bool slept;
-};
-
-std::vector<ThreadInfo> thread_info(MAX_THREAD_NUM);
-
-// Thread function that just counts iterations
-void thread_func() {
+// Thread functions for testing
+void thread_sleep_test() {
     int tid = uthread_get_tid();
-    thread_info[tid].tid = tid;
-    
-    while (thread_info[tid].iterations < 5) {
-        thread_info[tid].iterations++;
-        safe_print("Thread " + std::to_string(tid) + " iteration " + 
-                   std::to_string(thread_info[tid].iterations));
-        
-        // Yield to give other threads a chance
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
-        }
-    }
-    
-    // Thread finishes by terminating itself
-    uthread_terminate(tid);
+    printf("Thread %d is going to sleep for 2 quantums\n", tid);
+    uthread_sleep(2);
+    printf("Thread %d woke up\n", tid);
+    global_counter++;
 }
 
-// Thread function that blocks itself after some iterations
-void blocking_thread_func() {
+void thread_increment() {
+    global_counter++;
+}
+
+void thread_long_run() {
+    printf("Thread %d starting long run\n", uthread_get_tid());
+    // Simulate long computation
+    for (volatile int i = 0; i < 1000000; i++) {}
+    global_counter++;
+    printf("Thread %d finished long run\n", uthread_get_tid());
+}
+
+void thread_block_itself() {
     int tid = uthread_get_tid();
-    thread_info[tid].tid = tid;
-    
-    while (thread_info[tid].iterations < 3) {
-        thread_info[tid].iterations++;
-        safe_print("Blocking thread " + std::to_string(tid) + " iteration " + 
-                   std::to_string(thread_info[tid].iterations));
-        
-        if (thread_info[tid].iterations == 2) {
-            safe_print("Thread " + std::to_string(tid) + " blocking itself");
-            thread_info[tid].blocked = true;
-            uthread_block(tid);
-        }
-        
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
-        }
-    }
-    
-    uthread_terminate(tid);
+    printf("Thread %d is blocking itself\n", tid);
+    uthread_block(tid);
+    // This should only run after being resumed
+    printf("Thread %d resumed after self-block\n", tid);
+    global_counter++;
 }
 
-// Thread function that sleeps
-void sleeping_thread_func() {
+void thread_with_sleep_and_terminate() {
     int tid = uthread_get_tid();
-    thread_info[tid].tid = tid;
-    
-    while (thread_info[tid].iterations < 3) {
-        thread_info[tid].iterations++;
-        safe_print("Sleeping thread " + std::to_string(tid) + " iteration " + 
-                   std::to_string(thread_info[tid].iterations));
-        
-        if (thread_info[tid].iterations == 2) {
-            safe_print("Thread " + std::to_string(tid) + " sleeping for 3 quantums");
-            thread_info[tid].slept = true;
-            uthread_sleep(3);
-            safe_print("Thread " + std::to_string(tid) + " woke up");
-        }
-        
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield thread " + std::to_string(tid));
-        }
-    }
-    
+    printf("Thread %d is going to sleep for 1 quantum and then terminate\n", tid);
+    uthread_sleep(1);
+    printf("Thread %d woke up and is now terminating itself\n", tid);
     uthread_terminate(tid);
+    // This should never be reached
+    global_counter = -999;
 }
 
-// TEST 1: Basic initialization and termination
-bool test_init_and_terminate() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
+void thread_spawner() {
+    int tid = uthread_get_tid();
+    printf("Thread %d is spawning a new thread\n", tid);
+    int new_tid = uthread_spawn(thread_increment);
+    if (new_tid != -1) {
+        thread_ids[new_tid] = 1;  // Mark as used
+        printf("Thread %d spawned thread %d\n", tid, new_tid);
     }
-    
-    // Initialize the library with a quantum of 100ms
-    int ret = uthread_init(QUANTUM_USECS);
-    if (ret != 0) {
-        std::cout << "Failed to initialize thread library" << std::endl;
-        return false;
-    }
-    
-    // Verify that the main thread's ID is 0
-    int main_tid = uthread_get_tid();
-    if (main_tid != 0) {
-        std::cout << "Main thread ID is not 0" << std::endl;
-        return false;
-    }
-    
-    // Terminate the library
-    uthread_terminate(0);
-    return true;
+    global_counter++;
 }
 
-// TEST 2: Thread creation and basic scheduling
-bool test_thread_creation() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
+// Test cases
+void test_init() {
+    printf("%s\n=== Testing initialization ===\n%s", BLUE, RESET);
+    
+    // Test with valid quantum
+    int ret = uthread_init(quantum_usecs);
+    TEST_ASSERT(ret == 0, "Initialize with valid quantum");
+    
+    // Initialize should have set total quantums to 1
+    int total_q = uthread_get_total_quantums();
+    TEST_ASSERT(total_q == 1, "Total quantums initialized to 1");
+    
+    // Main thread should have tid 0
+    int tid = uthread_get_tid();
+    TEST_ASSERT(tid == 0, "Main thread has tid 0");
+    
+    // Main thread should have 1 quantum
+    int q = uthread_get_quantums(0);
+    TEST_ASSERT(q == 1, "Main thread starts with 1 quantum");
+}
+
+void test_spawn() {
+    printf("%s\n=== Testing thread spawning ===\n%s", BLUE, RESET);
+    
+    // Track thread IDs
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    
+    // Spawn a few threads
+    for (int i = 0; i < 5; i++) {
+        int tid = uthread_spawn(thread_increment);
+        TEST_ASSERT(tid > 0 && tid < MAX_THREAD_NUM, "Spawn returns valid tid");
+        TEST_ASSERT(thread_ids[tid] == 0, "Spawn returns unused tid");
+        thread_ids[tid] = 1;  // Mark as used
     }
     
-    uthread_init(QUANTUM_USECS);
+    // Test thread ID reuse by terminating and respawning
+    int tid_to_terminate = 1;  // First spawned thread
+    int ret = uthread_terminate(tid_to_terminate);
+    TEST_ASSERT(ret == 0, "Terminate thread succeeds");
+    thread_ids[tid_to_terminate] = 0;  // Mark as free
     
-    // Create a few threads
-    int tid1 = uthread_spawn(thread_func);
-    int tid2 = uthread_spawn(thread_func);
-    int tid3 = uthread_spawn(thread_func);
+    // Spawn a new thread, should reuse the lowest available ID
+    int new_tid = uthread_spawn(thread_increment);
+    TEST_ASSERT(new_tid == tid_to_terminate, "ID reuse works correctly");
+    thread_ids[new_tid] = 1;  // Mark as used again
     
-    if (tid1 != 1 || tid2 != 2 || tid3 != 3) {
-        std::cout << "Thread IDs not assigned correctly" << std::endl;
-        uthread_terminate(0);
-        return false;
-    }
-    
-    // Let threads run for a while
-    for (int i = 0; i < 20; i++) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
-        }
-    }
-    
-    // Check if all threads completed their iterations
-    bool all_completed = true;
-    for (int i = 1; i <= 3; i++) {
-        if (thread_info[i].iterations < 5) {
-            all_completed = false;
+    // Try spawning MAX_THREAD_NUM threads (should fail at some point)
+    int last_valid_tid = -1;
+    int overflow_tid = -1;
+    for (int i = 0; i < MAX_THREAD_NUM + 1; i++) {
+        int tid = uthread_spawn(thread_increment);
+        if (tid != -1) {
+            last_valid_tid = tid;
+            thread_ids[tid] = 1;  // Mark as used
+        } else {
+            overflow_tid = i;
             break;
         }
     }
     
-    uthread_terminate(0);
-    return all_completed;
-}
-
-// TEST 3: Thread ID reuse
-bool test_thread_id_reuse() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
-    }
+    TEST_ASSERT(overflow_tid != -1, "Spawn fails when exceeding MAX_THREAD_NUM");
     
-    uthread_init(QUANTUM_USECS);
-    
-    // Create and terminate threads to free up IDs
-    int tid1 = uthread_spawn(thread_func);
-    int tid2 = uthread_spawn(thread_func); // Keeping this for thread creation
-    
-    // Terminate thread 1
-    uthread_terminate(tid1);
-    
-    // Spawn a new thread, should get the ID of the terminated thread
-    int tid3 = uthread_spawn(thread_func);
-    
-    bool id_reused = (tid3 == tid1);
-    
-    // Clean up
-    uthread_terminate(0);
-    
-    return id_reused;
-}
-
-// TEST 4: Block and resume functionality
-bool test_block_and_resume() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
-    }
-    
-    uthread_init(QUANTUM_USECS);
-    
-    // Create a thread that blocks itself
-    int tid = uthread_spawn(blocking_thread_func);
-    
-    // Let it run until it blocks itself
-    while (!thread_info[tid].blocked) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
+    // Clean up by terminating all threads except main
+    for (int i = 1; i < MAX_THREAD_NUM; i++) {
+        if (thread_ids[i]) {
+            uthread_terminate(i);
+            thread_ids[i] = 0;
         }
     }
+}
+
+void test_block_resume() {
+    printf("%s\n=== Testing block and resume ===\n%s", BLUE, RESET);
     
-    // Make sure it's blocked at iteration 2
-    if (thread_info[tid].iterations != 2) {
-        std::cout << "Thread did not block at expected iteration" << std::endl;
-        uthread_terminate(0);
-        return false;
-    }
+    // Reset thread IDs and counter
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    global_counter = 0;
+    
+    // Spawn a thread that blocks itself
+    int block_tid = uthread_spawn(thread_block_itself);
+    thread_ids[block_tid] = 1;
+    TEST_ASSERT(block_tid > 0, "Spawn thread for block test");
+    
+    // Let the thread run and block itself
+    for (volatile int i = 0; i < 1000000; i++) {}
+    
+    // Check that global_counter hasn't been incremented because thread is blocked
+    TEST_ASSERT(global_counter == 0, "Thread is blocked and didn't increment counter");
     
     // Resume the thread
-    thread_info[tid].resumed = true;
-    uthread_resume(tid);
+    int ret = uthread_resume(block_tid);
+    TEST_ASSERT(ret == 0, "Resume returns success");
     
-    // Let it complete
-    for (int i = 0; i < 10; i++) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
-        }
-    }
+    // Wait for thread to run
+    for (volatile int i = 0; i < 2000000; i++) {}
     
-    // Check if it completed all iterations
-    bool completed = (thread_info[tid].iterations == 3);
+    // Check that global_counter has been incremented after resume
+    TEST_ASSERT(global_counter == 1, "Thread resumed and incremented counter");
     
-    // Clean up
-    uthread_terminate(0);
+    // Test block error conditions
+    ret = uthread_block(0);
+    TEST_ASSERT(ret == -1, "Cannot block main thread");
     
-    return completed;
-}
-
-// TEST 5: Sleep functionality
-bool test_sleep() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
-    }
-    
-    uthread_init(QUANTUM_USECS);
-    
-    // Create a thread that sleeps
-    int tid = uthread_spawn(sleeping_thread_func);
-    
-    // Let it run until it sleeps
-    while (!thread_info[tid].slept) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
-        }
-    }
-    
-    // Make sure it's sleeping at iteration 2
-    if (thread_info[tid].iterations != 2) {
-        std::cout << "Thread did not sleep at expected iteration" << std::endl;
-        uthread_terminate(0);
-        return false;
-    }
-    
-    // Wait for it to wake up and finish
-    for (int i = 0; i < 15; i++) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
-        }
-    }
-    
-    // Check if it completed all iterations
-    bool completed = (thread_info[tid].iterations == 3);
+    ret = uthread_block(MAX_THREAD_NUM + 1);
+    TEST_ASSERT(ret == -1, "Cannot block non-existent thread");
     
     // Clean up
-    uthread_terminate(0);
-    
-    return completed;
+    uthread_terminate(block_tid);
+    thread_ids[block_tid] = 0;
 }
 
-// TEST 6: Test maximum number of threads
-bool test_max_threads() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
+void test_sleep() {
+    printf("%s\n=== Testing sleep functionality ===\n%s", BLUE, RESET);
+    
+    // Reset thread IDs and counter
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    global_counter = 0;
+    
+    // Spawn a thread that sleeps
+    int sleep_tid = uthread_spawn(thread_sleep_test);
+    thread_ids[sleep_tid] = 1;
+    TEST_ASSERT(sleep_tid > 0, "Spawn thread for sleep test");
+    
+    // Let the thread run and go to sleep
+    int initial_quantums = uthread_get_total_quantums();
+    
+    // Wait enough time for sleep to complete (more than 2 quantums)
+    while (uthread_get_total_quantums() < initial_quantums + 5) {
+        for (volatile int i = 0; i < 100000; i++) {}
     }
     
-    uthread_init(QUANTUM_USECS);
+    // Check that global_counter has been incremented after sleep
+    TEST_ASSERT(global_counter == 1, "Thread woke up from sleep and incremented counter");
     
-    // Create the maximum number of threads (minus the main thread)
-    std::vector<int> tids;
+    // Test sleep error conditions
+    int ret = uthread_sleep(2);
+    TEST_ASSERT(ret == -1, "Main thread cannot sleep");
+    
+    // Clean up
+    uthread_terminate(sleep_tid);
+    thread_ids[sleep_tid] = 0;
+}
+
+void test_terminate() {
+    printf("%s\n=== Testing thread termination ===\n%s", BLUE, RESET);
+    
+    // Reset thread IDs and counter
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    global_counter = 0;
+    
+    // Spawn a thread that will terminate itself
+    int term_tid = uthread_spawn(thread_with_sleep_and_terminate);
+    thread_ids[term_tid] = 1;
+    TEST_ASSERT(term_tid > 0, "Spawn thread for self-termination test");
+    
+    // Let the thread run, sleep, and terminate
+    int initial_quantums = uthread_get_total_quantums();
+    while (uthread_get_total_quantums() < initial_quantums + 5) {
+        for (volatile int i = 0; i < 100000; i++) {}
+    }
+    
+    // Check that global_counter hasn't been set to -999
+    TEST_ASSERT(global_counter == 0, "Thread terminated properly and didn't run code after terminate");
+    
+    // Try to terminate the already terminated thread (should fail)
+    int ret = uthread_terminate(term_tid);
+    TEST_ASSERT(ret == -1, "Cannot terminate already terminated thread");
+    
+    // Test terminate error conditions
+    ret = uthread_terminate(MAX_THREAD_NUM + 1);
+    TEST_ASSERT(ret == -1, "Cannot terminate non-existent thread");
+    
+    // Main thread termination is tested separately as it exits the program
+}
+
+void test_id_assignment() {
+    printf("%s\n=== Testing thread ID assignment ===\n%s", BLUE, RESET);
+    
+    // Reset thread IDs
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    
+    // Spawn threads with sequential IDs
+    int tid1 = uthread_spawn(thread_increment);
+    int tid2 = uthread_spawn(thread_increment);
+    int tid3 = uthread_spawn(thread_increment);
+    
+    TEST_ASSERT(tid1 == 1, "First spawned thread has ID 1");
+    TEST_ASSERT(tid2 == 2, "Second spawned thread has ID 2");
+    TEST_ASSERT(tid3 == 3, "Third spawned thread has ID 3");
+    
+    // Terminate thread 2 and spawn a new one
+    uthread_terminate(tid2);
+    int tid4 = uthread_spawn(thread_increment);
+    TEST_ASSERT(tid4 == tid2, "New thread gets ID of terminated thread");
+    
+    // Terminate threads in reverse order and check ID assignment
+    uthread_terminate(tid3);
+    uthread_terminate(tid4);
+    uthread_terminate(tid1);
+    
+    int tid5 = uthread_spawn(thread_increment);
+    TEST_ASSERT(tid5 == 1, "First available ID is reused");
+    
+    // Clean up
+    uthread_terminate(tid5);
+}
+
+void test_quantums_counting() {
+    printf("%s\n=== Testing quantum counting ===\n%s", BLUE, RESET);
+    
+    // Reset thread IDs
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    
+    int initial_total = uthread_get_total_quantums();
+    int initial_main = uthread_get_quantums(0);
+    
+    // Spawn threads that will run for multiple quantums
+    int tid1 = uthread_spawn(thread_long_run);
+    int tid2 = uthread_spawn(thread_long_run);
+    
+    // Wait for several quantums to pass
+    for (volatile int i = 0; i < 5000000; i++) {}
+    
+    // Check that total quantums increased
+    int new_total = uthread_get_total_quantums();
+    TEST_ASSERT(new_total > initial_total, "Total quantums increased");
+    
+    // Check individual thread quantums
+    int q_main = uthread_get_quantums(0);
+    int q_tid1 = uthread_get_quantums(tid1);
+    int q_tid2 = uthread_get_quantums(tid2);
+    
+    TEST_ASSERT(q_main >= initial_main, "Main thread quantums increased or stayed same");
+    TEST_ASSERT(q_tid1 > 0, "Thread 1 ran for at least 1 quantum");
+    TEST_ASSERT(q_tid2 > 0, "Thread 2 ran for at least 1 quantum");
+    
+    // Test quantums error conditions
+    int ret = uthread_get_quantums(MAX_THREAD_NUM + 1);
+    TEST_ASSERT(ret == -1, "Cannot get quantums of non-existent thread");
+    
+    // Clean up
+    uthread_terminate(tid1);
+    uthread_terminate(tid2);
+}
+
+void test_thread_functions_in_threads() {
+    printf("%s\n=== Testing thread functions within threads ===\n%s", BLUE, RESET);
+    
+    // Reset thread IDs and counter
+    memset(thread_ids, 0, sizeof(thread_ids));
+    thread_ids[0] = 1;  // Main thread
+    global_counter = 0;
+    
+    // Spawn a thread that will spawn another thread
+    int spawner_tid = uthread_spawn(thread_spawner);
+    thread_ids[spawner_tid] = 1;
+    
+    // Wait for threads to run
+    for (volatile int i = 0; i < 2000000; i++) {}
+    
+    // Check that global_counter has been incremented at least twice
+    // Once by spawner and once by its child
+    TEST_ASSERT(global_counter >= 2, "Thread successfully spawned another thread");
+    
+    // Clean up - terminate all threads except main
     for (int i = 1; i < MAX_THREAD_NUM; i++) {
-        int tid = uthread_spawn(thread_func);
-        if (tid == -1) {
-            std::cout << "Failed to create thread " << i << " (should succeed)" << std::endl;
-            uthread_terminate(0);
-            return false;
-        }
-        tids.push_back(tid);
-    }
-    
-    // Try to create one more thread, should fail
-    int extra_tid = uthread_spawn(thread_func);
-    bool max_enforced = (extra_tid == -1);
-    
-    // Clean up
-    uthread_terminate(0);
-    
-    return max_enforced;
-}
-
-// TEST 7: Test invalid inputs
-bool test_invalid_inputs() {
-    bool passed = true;
-    
-    // Test invalid quantum
-    if (uthread_init(-1) != -1) {
-        std::cout << "uthread_init should fail with negative quantum" << std::endl;
-        passed = false;
-    }
-    
-    // Initialize with valid quantum
-    uthread_init(QUANTUM_USECS);
-    
-    // Test invalid thread operations
-    if (uthread_terminate(MAX_THREAD_NUM) != -1) {
-        std::cout << "uthread_terminate should fail with invalid tid" << std::endl;
-        passed = false;
-    }
-    
-    if (uthread_block(MAX_THREAD_NUM) != -1) {
-        std::cout << "uthread_block should fail with invalid tid" << std::endl;
-        passed = false;
-    }
-    
-    if (uthread_resume(MAX_THREAD_NUM) != -1) {
-        std::cout << "uthread_resume should fail with invalid tid" << std::endl;
-        passed = false;
-    }
-    
-    // Cannot block the main thread (tid 0)
-    if (uthread_block(0) != -1) {
-        std::cout << "uthread_block should fail when trying to block main thread" << std::endl;
-        passed = false;
-    }
-    
-    // Clean up
-    uthread_terminate(0);
-    
-    return passed;
-}
-
-// TEST 8: Test thread priority and scheduling
-bool test_scheduling() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
-    }
-    
-    uthread_init(QUANTUM_USECS);
-    
-    // Create some threads
-    int tid1 = uthread_spawn(thread_func);
-    int tid2 = uthread_spawn(thread_func);
-    int tid3 = uthread_spawn(thread_func);
-    
-    // Let them run for a while
-    for (int i = 0; i < 20; i++) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
+        if (thread_ids[i]) {
+            uthread_terminate(i);
         }
     }
-    
-    // Verify that scheduling was fair
-    int min_iterations = std::min({thread_info[tid1].iterations,
-                                  thread_info[tid2].iterations,
-                                  thread_info[tid3].iterations});
-    
-    int max_iterations = std::max({thread_info[tid1].iterations,
-                                  thread_info[tid2].iterations,
-                                  thread_info[tid3].iterations});
-    
-    // The difference should not be too large in a fair scheduler
-    bool fair_scheduling = (max_iterations - min_iterations <= 2);
-    
-    // Clean up
-    uthread_terminate(0);
-    
-    return fair_scheduling;
 }
 
-// TEST 9: Test blocking a thread when it's already blocked
-bool test_double_block() {
-    // Reset all thread info
-    for (int i = 0; i < MAX_THREAD_NUM; i++) {
-        thread_info[i] = {0, 0, false, false, false};
-    }
+void test_edge_cases() {
+    printf("%s\n=== Testing edge cases ===\n%s", BLUE, RESET);
     
-    uthread_init(QUANTUM_USECS);
+    // Test block and resume edge cases
+    int ret = uthread_block(99999);  // Non-existent thread
+    TEST_ASSERT(ret == -1, "Cannot block non-existent thread");
     
-    // Create a thread
-    int tid = uthread_spawn(thread_func);
+    ret = uthread_resume(99999);  // Non-existent thread
+    TEST_ASSERT(ret == -1, "Cannot resume non-existent thread");
     
-    // Block it
-    uthread_block(tid);
+    // Spawn a thread and test double blocking
+    int tid = uthread_spawn(thread_increment);
+    ret = uthread_block(tid);
+    TEST_ASSERT(ret == 0, "First block succeeds");
     
-    // Try to block it again, should not cause errors
-    int ret = uthread_block(tid);
+    ret = uthread_block(tid);
+    TEST_ASSERT(ret == 0, "Double blocking is not an error");
     
-    // Resume it
-    uthread_resume(tid);
+    // Test double resuming
+    ret = uthread_resume(tid);
+    TEST_ASSERT(ret == 0, "First resume succeeds");
     
-    // Let it finish
-    for (int i = 0; i < 10; i++) {
-        if (uthread_yield() != 0) {
-            safe_print("ERROR: Failed to yield main thread");
-        }
-    }
+    ret = uthread_resume(tid);
+    TEST_ASSERT(ret == 0, "Resuming READY thread is not an error");
     
     // Clean up
-    uthread_terminate(0);
-    
-    // The second block should succeed according to spec (it's already blocked)
-    return (ret == 0);
+    uthread_terminate(tid);
 }
 
-// Main function to run all tests
 int main() {
-    std::cout << YELLOW << "===== User-Level Threads Library Test Suite =====" << RESET << std::endl;
-
-    // Run all tests
-    run_test("Test init and terminate", test_init_and_terminate);
-    run_test("Test thread creation", test_thread_creation);
-    run_test("Test thread ID reuse", test_thread_id_reuse);
-    run_test("Test block and resume", test_block_and_resume);
-    run_test("Test sleep functionality", test_sleep);
-    run_test("Test maximum threads", test_max_threads);
-    run_test("Test invalid inputs", test_invalid_inputs);
-    run_test("Test scheduling fairness", test_scheduling);
-    run_test("Test double blocking", test_double_block);
-
-    // Print summary
-    std::cout << YELLOW << "===== Test Results =====" << RESET << std::endl;
-    std::cout << "Total tests: " << total_tests << std::endl;
-    std::cout << "Passed tests: " << passed_tests << std::endl;
-    std::cout << "Failed tests: " << (total_tests - passed_tests) << std::endl;
+    printf("%s==== User-Level Threads Library Test Suite ====\n%s", YELLOW, RESET);
     
-    if (!failed_tests.empty()) {
-        std::cout << RED << "Failed tests:" << RESET << std::endl;
-        for (const auto& test : failed_tests) {
-            std::cout << "  - " << test << std::endl;
-        }
+    // Run tests
+    test_init();
+    test_spawn();
+    test_block_resume();
+    test_sleep();
+    test_terminate();
+    test_id_assignment();
+    test_quantums_counting();
+    test_thread_functions_in_threads();
+    test_edge_cases();
+    
+    // Print summary
+    printf("\n%s==== Test Summary ====\n%s", YELLOW, RESET);
+    printf("Total tests: %d\n", total_tests);
+    printf("%sPassed: %d%s\n", GREEN, passed_tests, RESET);
+    if (failed_tests > 0) {
+        printf("%sFailed: %d%s\n", RED, failed_tests, RESET);
+    } else {
+        printf("Failed: 0\n");
     }
     
-    return (passed_tests == total_tests) ? 0 : 1;
+    return (failed_tests > 0) ? 1 : 0;
 }
