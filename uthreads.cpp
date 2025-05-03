@@ -282,20 +282,17 @@ int uthread_terminate(int tid){
         terminate_program();
     }
     
-    if (tid == unblocked_threads.front()->tid) {
-        Thread* terminated_thread = unblocked_threads.front();
-
-        unused_tid.insert(terminated_thread->tid);
-        unblocked_threads.pop_front(); // remove from list BEFORE jump
-
-        // Switch to next thread first
-        Thread* next_thread = unblocked_threads.front();
+    if(tid == unblocked_threads.front()->tid){
+        // -- change the runnign thread to the next ready -- //
+        Thread *terminated_thread = unblocked_threads.front();
+        unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
+        delete terminated_thread;
+        unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
+        
+        // -- update teh total quantums, wake up sleeping threads, and start the timer for the new running thread.
         pre_jumping();
         unblock_timer_signal();
-        siglongjmp(next_thread->env, 1);
-
-        // 🚫 Unreachable: do NOT delete here!
-        // delete terminated_thread;
+        siglongjmp(unblocked_threads.front()->env, 1); // the function not return, moving to the next thread.
     }
     // if got here, the tid either belong to ready or blocked thread, or not to any thread
     if(delete_from_list(unblocked_threads, tid) != 0){
