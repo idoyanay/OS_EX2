@@ -17,7 +17,6 @@
 int total_tests = 0;
 int passed_tests = 0;
 int failed_tests = 0;
-int insider_tid;
 
 #define TEST_ASSERT(condition, message) \
     do { \
@@ -89,7 +88,6 @@ void thread_spawner() {
     if (new_tid != -1) {
         thread_ids[new_tid] = 1;  // Mark as used
         printf("Thread %d spawned thread %d\n", tid, new_tid);
-        insider_tid = new_tid;
     }
     global_counter++;
     while(1);
@@ -361,8 +359,6 @@ void test_thread_functions_in_threads() {
     int spawner_tid = uthread_spawn(thread_spawner);
     thread_ids[spawner_tid] = 1;
     
-    int current_quantom_counter = uthread_get_total_quantums();
-    while(uthread_get_total_quantums() < current_quantom_counter + 5);
     // Wait for threads to run
     for (volatile int i = 0; i < 2000000; i++) {}
     
