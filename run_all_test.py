@@ -6,7 +6,7 @@ lib_path = "libuthreads.a"
 include_flags = "-I."
 compile_flags = "-std=c++11"
 link_flags = "-lpthread"
-tests = [f"Tests/test{i}" for i in range(1, 9)]  # test1 to test8
+tests = [f"test{i}" for i in range(1, 9)]  # test1 to test8
 
 def compile_test(test_name):
     cpp_file = f"{test_name}.cpp"
