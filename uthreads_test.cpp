@@ -135,12 +135,11 @@ void test_spawn() {
     thread_ids[new_tid] = 1;  // Mark as used again
     
     // Try spawning MAX_THREAD_NUM threads (should fail at some point)
-    int last_valid_tid = -1;
+
     int overflow_tid = -1;
     for (int i = 0; i < MAX_THREAD_NUM + 1; i++) {
         int tid = uthread_spawn(thread_increment);
         if (tid != -1) {
-            last_valid_tid = tid;
             thread_ids[tid] = 1;  // Mark as used
         } else {
             overflow_tid = i;
