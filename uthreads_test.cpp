@@ -175,7 +175,7 @@ void test_block_resume() {
     // Spawn a thread that blocks itself
     int block_tid = uthread_spawn(thread_block_itself);
     thread_ids[block_tid] = 1;
-    for (volatile int i = 0; i < 1000000; i++) {}
+    
     TEST_ASSERT(block_tid > 0, "Spawn thread for block test");
     
     // Let the thread run and block itself
