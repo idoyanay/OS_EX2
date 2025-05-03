@@ -15,7 +15,7 @@ using namespace std;
 
 
 int MAIN_THREAD = 0;
-int QUANTOM = 100000;
+int QUANTOM = 1000000;
 
 void send_sigalarm(){
     kill(getpid(),SIGVTALRM);

@@ -74,8 +74,8 @@ void start_timer()
     timer.it_interval.tv_sec = 0;
     timer.it_interval.tv_usec = 0;               // config the timer for one shot
     
-    timer.it_value.tv_sec = 0;
-    timer.it_value.tv_usec = quantum_per_thread;
+    timer.it_value.tv_sec = quantum_per_thread / 1000000;
+    timer.it_value.tv_usec = quantum_per_thread % 1000000;
     if(setitimer(ITIMER_VIRTUAL, &timer, NULL) != 0){ // check if restarting the timer had faild
         print_error("setitimer failed", PrintType::SYSTEM_ERR); // this call will end the run with exit(1)
     }
