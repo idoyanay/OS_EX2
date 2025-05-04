@@ -265,6 +265,7 @@ void terminate_program(){
     blocked_threads.clear();
     std::cout<<"***********"<<std::endl;
     for (Thread* t : unblocked_threads) {
+        printf("t is %p\n", t);
         std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
         delete t;
     }
