@@ -51,8 +51,8 @@
  static int quantum_per_thread;                  // global value (init in the init-function) for the sig-handler to use
 
  static int total_quantums = 0;                  // the total quantums that had been passed since uthreads_init
- static Thread *remove_thread;
- static sigjmp_buf exit_env;
+ static Thread *remove_thread;                   // thread to delete. created for not deleting thread that currently running and by that accsessing unvalid memory.
+ static sigjmp_buf exit_env;                     // exit env for terminate the program. created for dealing with terminte(0) by thread with tid != 0.
  
   // ------------------------------------------------------------------------- //
   
@@ -155,12 +155,6 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
-    for(Thread* thread : unblocked_threads){
-        std::cout<<"thread "<<thread->tid<<" in "<<static_cast<void*>(thread)<<std::endl;
-    }
-    for(Thread* thread : blocked_threads){
-        std::cout<<"thread "<<thread->tid<<" in "<<static_cast<void*>(thread)<<std::endl;
-    }
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
@@ -170,7 +164,6 @@ void pre_jumping()
 
 void end_of_quantum(int sig){    
     if(remove_thread != nullptr){
-        std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
         delete remove_thread;
         remove_thread = nullptr;
     }
@@ -192,22 +185,13 @@ void end_of_quantum(int sig){
 }
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
-    std::cout<<"remove thread is "<<static_cast<void*>(remove_thread)<<std::endl;
-    if(remove_thread != nullptr){
-        std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
-        delete remove_thread;
-    }
     for (Thread* t : blocked_threads) {
-        std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
-        if (t->tid != 0){
-            delete t;
-        }
-        
+        delete t;        
     }
+
     blocked_threads.clear();
-    std::cout<<"***********"<<std::endl;
+
     for (Thread* t : unblocked_threads) {
-        std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
         delete t;
     }
 
@@ -232,7 +216,6 @@ int uthread_init(int quantum_usecs)
     }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
-    std::cerr<<"new thread "<<unblocked_threads.front()->tid<<" in" <<static_cast<void*>(unblocked_threads.front())<<std::endl;
     if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
         // create and update the sig-handler
@@ -266,7 +249,6 @@ int uthread_spawn(thread_entry_point entry_point){
     unused_tid.erase(unused_tid.begin()); // remove it from the set
 
     Thread *new_thread = new Thread{tid, {}, {}, 0, 0, false, false}; // create new thread
-    std::cerr<<"new thread "<<new_thread->tid<<" in" <<static_cast<void*>(new_thread)<<std::endl;
     setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
     unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
     
@@ -306,14 +288,12 @@ int uthread_terminate(int tid){
     //                   trying to delte the thread fits to the tid from the lists of theads. if not succseeded, means that the tid is not valid.
 
     block_timer_signal();
-    if(tid == 0){
-        siglongjmp(exit_env, 1);
-    }
-
     if(remove_thread != nullptr){
-        std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
         delete remove_thread;
         remove_thread = nullptr;
+    }
+    if(tid == 0){
+        siglongjmp(exit_env, 1);
     }
 
     if(tid == unblocked_threads.front()->tid){
@@ -328,13 +308,6 @@ int uthread_terminate(int tid){
         unblock_timer_signal();
         siglongjmp(unblocked_threads.front()->env, 1); // the function not return, moving to the next thread.
     }
-    // if got here, the tid either belong to ready or blocked thread, or not to any thread
-    // if(delete_from_list(unblocked_threads, tid) != ){
-    //     if(delete_from_list(blocked_threads, tid) != 0){ // meaning that the tid is not the running one, and not in any list
-    //         print_error("uthread_terminate: tid is not in use", PrintType::THREAD_LIB_ERR);
-    //         return -1;
-    //     }
-    // }
     else{
         Thread *in_blocked = delete_from_list(blocked_threads, tid);
         Thread *in_unblocked = delete_from_list(unblocked_threads, tid);
@@ -360,7 +333,6 @@ int uthread_block(int tid){
         ret_val = -1;
     }
     
-
     else if(unblocked_threads.front()->tid == tid){
         Thread* thread_ptr = unblocked_threads.front();
         thread_ptr->blocked = true;
