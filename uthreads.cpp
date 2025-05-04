@@ -168,7 +168,10 @@ void pre_jumping()
  
 
 void end_of_quantum(int sig){    
-
+    if(remove_thread != nullptr){
+        delete remove_thread;
+        remove_thread = nullptr;
+    }
     wakeup_sleeping_threads();
 
     Thread *prev_run = unblocked_threads.front();
