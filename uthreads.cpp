@@ -22,35 +22,38 @@
  #include <sys/time.h>  // for itimerval
  
  
-  
-  // --- typedefs, enums, structs, and decleratoins for the internal use in the library --- //
- typedef unsigned long address_t;    // for the translation function
- #define JB_SP 6
- #define JB_PC 7
- enum class PrintType { SYSTEM_ERR, THREAD_LIB_ERR }; // print type for the error printing
- enum class BlockedType {SLEEP, BLOCK, UNBLOCKED};               // types of blocking
- // struct that contain all the relevant data
- struct Thread { 
-     int tid;
-     sigjmp_buf env;             // CPU context (saved)
-     char stack[STACK_SIZE];     // Stack memory (only needed for non-main threads)
-     int wake_up_quantum;        // the 'time' for a sleeping thread to wake up
-     int quantom_count;          // number of runnign quantoms for this thread
-     bool blocked;               // true if the thread is blocked
-     bool sleeping;              // true if the thread is sleeping
- };
- 
- static struct itimerval timer;                  // timer object for all the threads
- static std::list<Thread*> unblocked_threads;    // double-linkedList for the UNBLOCKED threads. the first one (front) will be the running.
- static std::list<Thread*> blocked_threads;      // double-linkedList for the BLOCKED threads
- static sigset_t sigvtalrm_set;                  // signals-set for storing the ITIMER signal, for blocking when calling a library function
- 
- static std::set<int> unused_tid;                // set of unused_tid, so when a new thread is adding when there was already 
-                                                 // other thread that had terminated, it will get his value. (note - the set is sorted from min to max)
- 
- static int quantum_per_thread;                  // global value (init in the init-function) for the sig-handler to use
 
- static int total_quantums = 0;                  // the total quantums that had been passed since uthreads_init
+// --- typedefs, enums, structs, and decleratoins for the internal use in the library --- //
+typedef unsigned long address_t;    // for the translation function
+#define JB_SP 6
+#define JB_PC 7
+enum class PrintType { SYSTEM_ERR, THREAD_LIB_ERR }; // print type for the error printing
+enum class BlockedType {SLEEP, BLOCK, UNBLOCKED};               // types of blocking
+// struct that contain all the relevant data
+struct Thread { 
+    int tid;
+    sigjmp_buf env;             // CPU context (saved)
+    char stack[STACK_SIZE];     // Stack memory (only needed for non-main threads)
+    int wake_up_quantum;        // the 'time' for a sleeping thread to wake up
+    int quantom_count;          // number of runnign quantoms for this thread
+    bool blocked;               // true if the thread is blocked
+    bool sleeping;              // true if the thread is sleeping
+};
+
+static struct itimerval timer;                  // timer object for all the threads
+static std::list<Thread*> unblocked_threads;    // double-linkedList for the UNBLOCKED threads. the first one (front) will be the running.
+static std::list<Thread*> blocked_threads;      // double-linkedList for the BLOCKED threads
+static sigset_t sigvtalrm_set;                  // signals-set for storing the ITIMER signal, for blocking when calling a library function
+
+static std::set<int> unused_tid;                // set of unused_tid, so when a new thread is adding when there was already 
+                                                // other thread that had terminated, it will get his value. (note - the set is sorted from min to max)
+
+static int quantum_per_thread;                  // global value (init in the init-function) for the sig-handler to use
+
+static int total_quantums = 0;                  // the total quantums that had been passed since uthreads_init
+
+static Thread* thread_to_delete = nullptr;
+
  
  
   // ------------------------------------------------------------------------- //
@@ -154,6 +157,10 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
+    if (thread_to_delete) {
+        delete thread_to_delete;
+        thread_to_delete = nullptr;
+    }
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
