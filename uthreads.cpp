@@ -338,7 +338,6 @@ int uthread_terminate(int tid){
         }
 
         unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
-        std::cerr<<"delete "<<remove_thread->tid<<" in" <<static_cast<void*>(remove_thread)<<std::endl;
     }
     unblock_timer_signal();
     return 0;
