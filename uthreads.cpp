@@ -52,6 +52,7 @@
 
  static int total_quantums = 0;                  // the total quantums that had been passed since uthreads_init
  static Thread *remove_thread;
+ static sigjmp_buf exit_env;
  
   // ------------------------------------------------------------------------- //
   
@@ -203,6 +204,9 @@ int uthread_init(int quantum_usecs)
     for (int i = 1; i < MAX_THREAD_NUM; ++i) { // init the unuset_tid (like a basket of all the 'free-tid' numbers). the 0 tid is already using
         unused_tid.insert(i);
     }
+    if(sigsetjmp(exit_env, 1) != 0){ // if we are in the exit_env, we need to terminate the program. created for dealing with threads != 0 that wants to terminate the program - so need to delete all the threads while not deleting the current stack
+        terminate_program();
+    }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
     std::cerr<<"new thread "<<unblocked_threads.front()->tid<<" in" <<static_cast<void*>(unblocked_threads.front())<<std::endl;
@@ -265,15 +269,11 @@ void terminate_program(){
     blocked_threads.clear();
     std::cout<<"***********"<<std::endl;
     for (Thread* t : unblocked_threads) {
-
-        if(t->tid != 0){
-            std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
-            delete t;
-        }
+        std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
+        delete t;
     }
 
-    // unblocked_threads.clear();
-
+    unblocked_threads.clear();
     exit(0);
 }
  
@@ -307,7 +307,7 @@ int uthread_terminate(int tid){
 
     block_timer_signal();
     if(tid == 0){
-        terminate_program();
+        siglongjmp(exit_env, 1);
     }
 
     if(remove_thread != nullptr){
