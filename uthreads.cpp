@@ -168,10 +168,7 @@ void pre_jumping()
  
 
 void end_of_quantum(int sig){    
-    if(remove_thread != nullptr){
-        delete remove_thread;
-        remove_thread = nullptr;
-    }
+
     wakeup_sleeping_threads();
 
     Thread *prev_run = unblocked_threads.front();
@@ -249,6 +246,9 @@ int uthread_spawn(thread_entry_point entry_point){
 
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
+    if(remove_thread != nullptr){
+        delete remove_thread;
+    }
     for (Thread* t : blocked_threads) {
         std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
         delete t;
