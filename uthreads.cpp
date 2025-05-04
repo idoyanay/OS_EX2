@@ -154,6 +154,12 @@ void unblock_timer_signal()
 void pre_jumping() 
 {
     // putting together all the mendatory action before jumping to a new thread
+    for(Thread* thread : unblocked_threads){
+        std::cout<<"thread "<<thread->tid<<" in "<<static_cast<void*>(thread)<<std::endl;
+    }
+    for(Thread* thread : blocked_threads){
+        std::cout<<"thread "<<thread->tid<<" in "<<static_cast<void*>(thread)<<std::endl;
+    }
     total_quantums++;
     unblocked_threads.front()->quantom_count++;
     wakeup_sleeping_threads();
