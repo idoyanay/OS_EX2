@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <signal.h>
+#include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
 
@@ -323,7 +324,8 @@ void test_quantums_counting() {
     int tid2 = uthread_spawn(thread_long_run);
     
     // Wait for several quantums to pass
-    for (volatile int i = 0; i < 5000000; i++) {}
+    int curr_quan = uthread_get_total_quantums();
+    while(uthread_get_total_quantums() == curr_quan);
     
     // Check that total quantums increased
     int new_total = uthread_get_total_quantums();
@@ -333,6 +335,10 @@ void test_quantums_counting() {
     int q_main = uthread_get_quantums(0);
     int q_tid1 = uthread_get_quantums(tid1);
     int q_tid2 = uthread_get_quantums(tid2);
+    kill(getpid(), SIGVTALRM);
+    kill(getpid(), SIGVTALRM);
+    kill(getpid(), SIGVTALRM);
+
     
     TEST_ASSERT(q_main >= initial_main, "Main thread quantums increased or stayed same");
     TEST_ASSERT(q_tid1 > 0, "Thread 1 ran for at least 1 quantum");
