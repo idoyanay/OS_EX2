@@ -263,12 +263,10 @@ void terminate_program(){
         
     }
     blocked_threads.clear();
-
+    std::cout<<"***********"<<std::endl;
     for (Thread* t : unblocked_threads) {
         std::cerr<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
-        if (t->tid != 0){
-            delete t;
-        }
+        delete t;
     }
 
     unblocked_threads.clear();
