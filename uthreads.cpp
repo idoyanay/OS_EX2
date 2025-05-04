@@ -313,7 +313,6 @@ int uthread_terminate(int tid){
         // -- change the runnign thread to the next ready -- //
         Thread *remove_thread = unblocked_threads.front();
         unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
-        std::cerr<<"delete "<<remove_thread->tid<<" in" <<static_cast<void*>(remove_thread)<<std::endl;
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
     
         
