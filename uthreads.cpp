@@ -260,6 +260,8 @@ void terminate_program(){
         delete t;
     }
     unblocked_threads.clear();
+
+    unused_tid.clear(); // fide to add
     exit(0);
 }
  
