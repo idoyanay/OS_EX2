@@ -312,7 +312,7 @@ int uthread_terminate(int tid){
 
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
-        Thread *remove_thread = unblocked_threads.front();
+        remove_thread = unblocked_threads.front();
         unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
     
@@ -332,7 +332,7 @@ int uthread_terminate(int tid){
     else{
         Thread *in_blocked = delete_from_list(blocked_threads, tid);
         Thread *in_unblocked = delete_from_list(unblocked_threads, tid);
-        Thread *remove_thread = (in_blocked != nullptr) ? in_blocked : in_unblocked;
+        remove_thread = (in_blocked != nullptr) ? in_blocked : in_unblocked;
         if(remove_thread == nullptr){
             unblock_timer_signal();
             return -1;
