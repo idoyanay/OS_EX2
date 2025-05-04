@@ -345,6 +345,10 @@ int uthread_block(int tid){
         print_error("uthread_block: unvalid tid", PrintType::THREAD_LIB_ERR);
         ret_val = -1;
     }
+    if(remove_thread != nullptr){
+        delete remove_thread;
+        remove_thread = nullptr;
+    }
     
 
     else if(unblocked_threads.front()->tid == tid){
