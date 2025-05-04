@@ -51,7 +51,7 @@
  static int quantum_per_thread;                  // global value (init in the init-function) for the sig-handler to use
 
  static int total_quantums = 0;                  // the total quantums that had been passed since uthreads_init
- 
+ static Thread *remove_thread;
  
   // ------------------------------------------------------------------------- //
   
@@ -168,6 +168,10 @@ void pre_jumping()
  
 
 void end_of_quantum(int sig){    
+    if(remove_thread != nullptr){
+        delete remove_thread;
+        remove_thread = nullptr;
+    }
     wakeup_sleeping_threads();
 
     Thread *prev_run = unblocked_threads.front();
@@ -271,17 +275,15 @@ std::list<Thread*>::iterator find_thread_in_list(std::list<Thread*>& lst, int wa
     return lst.end();  // not found
 }
  
-int delete_from_list(std::list<Thread*>& lst, int tid){
+Thread* delete_from_list(std::list<Thread*>& lst, int tid){
     //delete the wanted thread based on the tid, from the lst. return 0 if succseeded (the thread in the lst) and -1 on fail.
     auto thread_itr = find_thread_in_list(lst, tid);
+    Thread *res = nullptr;
     if(thread_itr != lst.end()){
-        unused_tid.insert((*thread_itr)->tid); // adding the tid of the terminated thread to the unused.
-        std::cerr<<"delete "<<(*thread_itr)->tid<<" in" <<static_cast<void*>(*thread_itr)<<std::endl;
-        delete *thread_itr; //delete content and resources
+        res = (*thread_itr);
         lst.erase(thread_itr);
-        return 0;
     }
-    return -1;
+    return res;
 }
 
 int uthread_terminate(int tid){
@@ -295,11 +297,11 @@ int uthread_terminate(int tid){
     }
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
-        Thread *terminated_thread = unblocked_threads.front();
-        unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
-        std::cerr<<"delete "<<terminated_thread->tid<<" in" <<static_cast<void*>(terminated_thread)<<std::endl;
-        delete terminated_thread;
+        Thread *remove_thread = unblocked_threads.front();
+        unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
+        std::cerr<<"delete "<<remove_thread->tid<<" in" <<static_cast<void*>(remove_thread)<<std::endl;
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
+    
         
         // -- update teh total quantums, wake up sleeping threads, and start the timer for the new running thread.
         pre_jumping();
@@ -307,14 +309,25 @@ int uthread_terminate(int tid){
         siglongjmp(unblocked_threads.front()->env, 1); // the function not return, moving to the next thread.
     }
     // if got here, the tid either belong to ready or blocked thread, or not to any thread
-    if(delete_from_list(unblocked_threads, tid) != 0){
-        if(delete_from_list(blocked_threads, tid) != 0){ // meaning that the tid is not the running one, and not in any list
-            print_error("uthread_terminate: tid is not in use", PrintType::THREAD_LIB_ERR);
+    // if(delete_from_list(unblocked_threads, tid) != ){
+    //     if(delete_from_list(blocked_threads, tid) != 0){ // meaning that the tid is not the running one, and not in any list
+    //         print_error("uthread_terminate: tid is not in use", PrintType::THREAD_LIB_ERR);
+    //         return -1;
+    //     }
+    // }
+    else{
+        Thread *in_blocked = delete_from_list(blocked_threads, tid);
+        Thread *in_unblocked = delete_from_list(unblocked_threads, tid);
+        Thread *remove_thread = (in_blocked != nullptr) ? in_blocked : in_unblocked;
+        if(remove_thread == nullptr){
+            unblock_timer_signal();
             return -1;
         }
-    }
 
-    unblock_timer_signal();
+        unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
+        std::cerr<<"delete "<<remove_thread->tid<<" in" <<static_cast<void*>(remove_thread)<<std::endl;
+        unblock_timer_signal();
+    }
     return 0;
 }
  
