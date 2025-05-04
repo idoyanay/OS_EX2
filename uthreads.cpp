@@ -250,6 +250,7 @@ int uthread_spawn(thread_entry_point entry_point){
 
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
+    std::cout<<"remove thread is "<<static_cast<void*>(remove_thread)<<std::endl;
     if(remove_thread != nullptr){
         std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
         delete remove_thread;
