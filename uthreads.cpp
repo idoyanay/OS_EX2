@@ -194,6 +194,7 @@ int uthread_init(int quantum_usecs)
     }
     quantum_per_thread = quantum_usecs; // updaiting for the sig-handler to use
     unblocked_threads.push_front(new Thread{0, {}, {}, 0, 0, false, false}); // initializing main thread
+    std::cout<<"new thread "<<unblocked_threads.front()->tid<<" in" <<static_cast<void*>(unblocked_threads.front())<<std::endl;
     if(sigsetjmp(unblocked_threads.front()->env, 1) == 0){ // Save current CPU context // TODO - this line needs checking. maybe needs to setjmp later.
 
         // create and update the sig-handler
@@ -227,6 +228,7 @@ int uthread_spawn(thread_entry_point entry_point){
     unused_tid.erase(unused_tid.begin()); // remove it from the set
 
     Thread *new_thread = new Thread{tid, {}, {}, 0, 0, false, false}; // create new thread
+    std::cout<<"new thread "<<new_thread->tid<<" in" <<static_cast<void*>(new_thread)<<std::endl;
     setup_thread(new_thread->stack, entry_point, new_thread->env); // setup the new thread
     unblocked_threads.push_back(new_thread); // add the new thread to the ready threads list
     
@@ -238,11 +240,13 @@ int uthread_spawn(thread_entry_point entry_point){
 void terminate_program(){
     // terminate the program when terminte function called with tid==0. deleting all the Threads, because they are on the heap.
     for (Thread* t : blocked_threads) {
+        std::cout<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
         delete t;
     }
     blocked_threads.clear();
 
     for (Thread* t : unblocked_threads) {
+        std::cout<<"delete "<<t->tid<<" in" <<static_cast<void*>(t)<<std::endl;
         delete t;
     }
     unblocked_threads.clear();
@@ -266,6 +270,7 @@ int delete_from_list(std::list<Thread*>& lst, int tid){
     auto thread_itr = find_thread_in_list(lst, tid);
     if(thread_itr != lst.end()){
         unused_tid.insert((*thread_itr)->tid); // adding the tid of the terminated thread to the unused.
+        std::cout<<"delete "<<(*thread_itr)->tid<<" in" <<static_cast<void*>(*thread_itr)<<std::endl;
         delete *thread_itr; //delete content and resources
         lst.erase(thread_itr);
         return 0;
@@ -286,6 +291,7 @@ int uthread_terminate(int tid){
         // -- change the runnign thread to the next ready -- //
         Thread *terminated_thread = unblocked_threads.front();
         unused_tid.insert(terminated_thread->tid); // adding the tid of the terminated thread to the unused.
+        std::cout<<"delete "<<terminated_thread->tid<<" in" <<static_cast<void*>(terminated_thread)<<std::endl;
         delete terminated_thread;
         unblocked_threads.pop_front(); // it is gurenteed (writen in the forum) that the main thread will not be blocked. so, if tid != 0 and we got here then the list.size>2.
         
