@@ -272,7 +272,7 @@ void terminate_program(){
         }
     }
 
-    unblocked_threads.clear();
+    // unblocked_threads.clear();
 
     exit(0);
 }
