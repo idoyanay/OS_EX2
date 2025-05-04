@@ -308,7 +308,7 @@ int uthread_terminate(int tid){
         delete remove_thread;
         remove_thread = nullptr;
     }
-    
+
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
         Thread *remove_thread = unblocked_threads.front();
@@ -340,8 +340,8 @@ int uthread_terminate(int tid){
 
         unused_tid.insert(remove_thread->tid); // adding the tid of the terminated thread to the unused.
         std::cerr<<"delete "<<remove_thread->tid<<" in" <<static_cast<void*>(remove_thread)<<std::endl;
-        unblock_timer_signal();
     }
+    unblock_timer_signal();
     return 0;
 }
  
