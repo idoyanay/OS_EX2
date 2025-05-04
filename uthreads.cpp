@@ -302,6 +302,13 @@ int uthread_terminate(int tid){
     if(tid == 0){
         terminate_program();
     }
+
+    if(remove_thread != nullptr){
+        std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
+        delete remove_thread;
+        remove_thread = nullptr;
+    }
+    
     if(tid == unblocked_threads.front()->tid){
         // -- change the runnign thread to the next ready -- //
         Thread *remove_thread = unblocked_threads.front();
@@ -346,11 +353,6 @@ int uthread_block(int tid){
     if( unvalid_tid){
         print_error("uthread_block: unvalid tid", PrintType::THREAD_LIB_ERR);
         ret_val = -1;
-    }
-    if(remove_thread != nullptr){
-        std::cout<<"delete "<<remove_thread->tid<<" in "<<static_cast<void*>(remove_thread)<<std::endl;
-        delete remove_thread;
-        remove_thread = nullptr;
     }
     
 
